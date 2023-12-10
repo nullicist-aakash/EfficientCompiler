@@ -1,7 +1,7 @@
 module;
 #include <iostream>
 
-export module parser.structures.dfa;
+export module parser.dfa;
 import helpers.flatmap;
 import helpers.checks;
 import helpers.reflection;
@@ -11,6 +11,20 @@ import <string_view>;
 import <algorithm>;
 import <vector>;
 import <type_traits>;
+
+template<typename T>
+concept is_token_type = requires(T t)
+{
+    std::is_enum_v<T>;
+    { T::UNINITIALISED } -> std::convertible_to<T>;
+    { T::TK_WHITESPACE } -> std::convertible_to<T>;
+    { T::TK_NEWLINE } -> std::convertible_to<T>;
+    { T::TK_SYMBOL } -> std::convertible_to<T>;
+    { T::TK_EOF } -> std::convertible_to<T>;
+    { T::TK_ERROR_SYMBOL } -> std::convertible_to<T>;
+    { T::TK_ERROR_PATTERN } -> std::convertible_to<T>;
+    { T::TK_ERROR_LENGTH } -> std::convertible_to<T>;
+};
 
 template <typename T>
 concept is_transition_info = requires(T t)
@@ -37,34 +51,34 @@ concept is_keyword_info = requires(T t)
 	std::is_enum_v<Enum>;
 };
 
+template <typename TokenType, typename TransitionInfo, typename FinalStateInfo, typename KeywordInfo>
+requires is_token_type<TokenType> && is_transition_info<TransitionInfo> && is_final_state_info<FinalStateInfo, TokenType> && is_keyword_info<KeywordInfo, TokenType>
+struct TypeChecker
+{
+    using passed = std::true_type;
+};
+
 export template <
     typename TokenType,
-    typename TransitionInfo,
-    typename FinalStateInfo,
-    typename KeywordInfo,
     int num_states,
     int num_keywords
-> requires (
-    is_transition_info<TransitionInfo> &&
-    is_final_state_info<FinalStateInfo, TokenType> &&
-    is_keyword_info<KeywordInfo, TokenType>
-    )
+>
 struct DFA
 {
     std::array<std::array<int, 128>, num_states> productions{};
     std::array<TokenType, num_states> final_states{};
     flatmap<std::string_view, TokenType, num_keywords> keyword_to_token{};
+
+    static const int state_count = num_states;
+    static const int keyword_count = num_keywords;
 };
 
 export template <
     typename TokenType,
-    typename TransitionInfo,
-    typename FinalStateInfo,
-    typename KeywordInfo,
     int num_states,
     int num_keywords
 >
-std::ostream& operator<<(std::ostream& out, const  DFA<TokenType, TransitionInfo, FinalStateInfo, KeywordInfo, num_states, num_keywords>& dfa)
+std::ostream& operator<<(std::ostream& out, const  DFA<TokenType, num_states, num_keywords>& dfa)
 {
     std::cout << "Productions: " << std::endl;
     for (int i = 0; i < num_states; ++i)
@@ -92,6 +106,13 @@ export consteval auto get_dfa(auto transition_callback, auto final_states_callba
     constexpr auto transitions = transition_callback();
     constexpr auto final_states = final_states_callback();
     constexpr auto keywords = keywords_callback();
+
+    using TokenType = decltype(final_states[0].token_type);
+    using TransitionInfo = decltype(transitions)::value_type;
+    using FinalStateInfo = decltype(final_states)::value_type;
+    using KeywordInfo = decltype(keywords)::value_type;
+
+    static_assert(TypeChecker<TokenType, TransitionInfo, FinalStateInfo, KeywordInfo>::passed::value);
 
     constexpr auto num_keywords = keywords.size();
     constexpr auto num_states_callback = [transitions, final_states]() constexpr
@@ -178,6 +199,18 @@ export consteval auto get_dfa(auto transition_callback, auto final_states_callba
                 if (visited[f.state_no])
                     return "Multiple entries for same state in final states";
 
+                if (f.token_type == TokenType::TK_ERROR_SYMBOL)
+                    return "Final state can't be TK_ERROR_SYMBOL";
+
+                if (f.token_type == TokenType::TK_ERROR_PATTERN)
+                    return "Final state can't be TK_ERROR_PATTERN";
+
+                if (f.token_type == TokenType::TK_ERROR_LENGTH)
+                    return "Final state can't be TK_ERROR_LENGTH";
+
+                if (f.token_type == TokenType::TK_EOF)
+                    return "Final state can't be TK_EOF";
+
                 visited[f.state_no] = true;
             }
 
@@ -186,12 +219,7 @@ export consteval auto get_dfa(auto transition_callback, auto final_states_callba
     constexpr auto res_fin = validate_final_states();
     ct_assert([]() { return res_fin; });
 
-    using TokenType = decltype(final_states[0].token_type);
-    using TransitionInfo = decltype(transitions)::value_type;
-    using FinalStateInfo = decltype(final_states)::value_type;
-    using KeywordInfo = decltype(keywords)::value_type;
-
-    DFA<TokenType, TransitionInfo, FinalStateInfo, KeywordInfo, num_states, num_keywords> dfa;
+    DFA<TokenType, num_states, num_keywords> dfa;
 
     for (auto& x : dfa.productions)
         x.fill(-1);

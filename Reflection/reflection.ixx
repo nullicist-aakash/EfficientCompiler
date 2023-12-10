@@ -47,7 +47,7 @@ consteval auto get_enum_array()
         constexpr auto res = get_enum_array<T, val + 1>();
         std::array<std::string_view, res.size() + 1> ans;
         ans[0] = result;
-        for (int i = 0; i < res.size(); ++i)
+        for (size_t i = 0; i < res.size(); ++i)
             ans[i + 1] = res[i];
         return ans;
     }

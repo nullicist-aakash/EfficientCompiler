@@ -12,6 +12,31 @@ import <algorithm>;
 import <vector>;
 import <type_traits>;
 
+template <typename T>
+concept is_transition_info = requires(T t)
+{
+	{ t.from } -> std::convertible_to<int>;
+	{ t.to } -> std::convertible_to<int>;
+	{ t.pattern } -> std::convertible_to<std::string_view>;
+	{ t.default_transition_state } -> std::convertible_to<int>;
+};
+
+template <typename T, typename Enum>
+concept is_final_state_info = requires(T t)
+{
+	{ t.state_no } -> std::convertible_to<int>;
+	{ t.token_type } -> std::convertible_to<Enum>;
+    std::is_enum_v<Enum>;
+};
+
+template <typename T, typename Enum>
+concept is_keyword_info = requires(T t)
+{
+	{ t.keyword } -> std::convertible_to<std::string_view>;
+	{ t.token_type } -> std::convertible_to<Enum>;
+	std::is_enum_v<Enum>;
+};
+
 export template <
     typename TokenType,
     typename TransitionInfo,
@@ -19,7 +44,11 @@ export template <
     typename KeywordInfo,
     int num_states,
     int num_keywords
->
+> requires (
+    is_transition_info<TransitionInfo> &&
+    is_final_state_info<FinalStateInfo, TokenType> &&
+    is_keyword_info<KeywordInfo, TokenType>
+    )
 struct DFA
 {
     std::array<std::array<int, 128>, num_states> productions{};

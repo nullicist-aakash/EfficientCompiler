@@ -36,7 +36,7 @@ consteval std::string_view get_enum_filtered_name(auto callable)
     return window.substr(new_start_index);
 }
 
-export template <typename T, int val = 0>
+template <typename T, int val = 0>
 consteval auto get_enum_array()
 {
     constexpr auto result = get_enum_filtered_name([]() constexpr { return (T)val; });
@@ -54,7 +54,7 @@ consteval auto get_enum_array()
 }
 
 template <typename T> requires std::is_enum_v<T>
-std::string_view get_token_string(T token)
+constexpr std::string_view get_token_string(T token)
 {
     static auto mapping = get_enum_array<T>();
     return mapping[(int)token];

@@ -12,7 +12,7 @@ import <algorithm>;
 import <vector>;
 import <type_traits>;
 
-template<typename T>
+export template<typename T>
 concept is_token_type = requires(T t)
 {
     std::is_enum_v<T>;

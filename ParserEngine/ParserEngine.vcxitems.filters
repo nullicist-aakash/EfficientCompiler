@@ -9,5 +9,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)dfa.ixx">
       <Filter>structures</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)lexer.ixx" />
   </ItemGroup>
 </Project>

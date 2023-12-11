@@ -191,6 +191,7 @@ int main()
 
     auto l = Lexer(dfa, str, 2);
 
+    cout << dfa << endl;
     for (auto x : l)
         cout << x << endl;
 }

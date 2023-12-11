@@ -1,6 +1,3 @@
-module;
-#include <iostream>
-
 export module parser.dfa;
 import helpers.flatmap;
 import helpers.checks;
@@ -73,29 +70,30 @@ struct DFA
 };
 
 export template <
+    typename T,
     token_type TokenType,
     int num_states,
     int num_keywords
 >
-std::ostream& operator<<(std::ostream& out, const  DFA<TokenType, num_states, num_keywords>& dfa)
+constexpr T& operator<<(T& out, const  DFA<TokenType, num_states, num_keywords>& dfa)
 {
-    std::cout << "Productions: " << std::endl;
+    out << "Productions: \n";
     for (int i = 0; i < num_states; ++i)
     {
         out << i << ": ";
         for (int j = 0; j < 128; ++j)
             out << dfa.productions[i][j] << " ";
-        out << std::endl;
+        out << '\n';
     }
 
-    out << std::endl << "Final States: " << std::endl;
+    out << "\nFinal States :\n";
     for (int i = 0; i < num_states; ++i)
         if (dfa.final_states[i] != TokenType::UNINITIALISED)
-            out << i << ": " << dfa.final_states[i] << std::endl;
+            out << i << ": " << dfa.final_states[i] << '\n';
 
-    out << std::endl << "Keywords: " << std::endl;
+    out << "\nKeywords:\n";
     for (const auto& [k, v] : dfa.keyword_to_token)
-        out << k << ": " << v << std::endl;
+        out << k << ": " << v << '\n';
 
     return out;
 }

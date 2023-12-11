@@ -1,15 +1,11 @@
-module;
-
-#include <iostream>
-
 export module parser.lexer;
+
 export import parser.dfa;
-
 import helpers.reflection;
-import <string_view>;
 import <limits>;
+import <string_view>;
 
-export template <token_type TokenType>
+template <token_type TokenType>
 struct Token
 {
     TokenType type = TokenType::UNINITIALISED;
@@ -17,10 +13,10 @@ struct Token
     std::size_t line_number = 0;
 };
 
-export template <token_type TokenType>
-std::ostream& operator<<(std::ostream& out, const Token<TokenType>& tk)
+export template <typename T, token_type TokenType>
+constexpr T& operator<<(T& out, const Token<TokenType>& tk)
 {
-    out << tk.type << " " << tk.line_number << " " << tk.lexeme << std::endl;
+    out << tk.type << " " << tk.line_number << " " << tk.lexeme;
     return out;
 }
 
@@ -150,7 +146,7 @@ class Lexer
 
     friend class iterator<TokenType, num_states, num_keywords>;
 public:
-    constexpr iterator<TokenType, num_states, num_keywords> begin() { return iterator{ *this }; }
+    constexpr auto begin() { return iterator{ *this }; }
     constexpr sentinel end() { return {}; }
 
     constexpr Lexer(DFA<TokenType, num_states, num_keywords>& dfa, std::string_view sc, int symbol_length_limit = 50)

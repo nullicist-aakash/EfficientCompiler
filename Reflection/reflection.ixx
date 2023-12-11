@@ -1,6 +1,3 @@
-module;
-#include <iostream>
-
 export module helpers.reflection;
 import <string_view>;
 import <array>;
@@ -60,8 +57,8 @@ constexpr std::string_view get_token_string(T token)
     return mapping[(int)token];
 }
 
-export template <typename T> requires std::is_enum_v<T>
-std::ostream& operator<<(std::ostream& out, const T& token)
+export template <typename T, typename ostream> requires std::is_enum_v<T>
+constexpr ostream& operator<<(ostream& out, const T& token)
 {
     out << get_token_string(token);
     return out;

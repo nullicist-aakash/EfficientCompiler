@@ -5,8 +5,8 @@ import parser.lexer;
 using std::string_view;
 using std::array;
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 using namespace std;
 
@@ -186,10 +186,11 @@ static auto read_file(string_view filename)
 
 int main()
 {
-    auto str = read_file("source.jack");
     auto dfa = fetch_dfa();
-    auto l = Lexer(dfa, str);
+    auto str = read_file("source.jack");
 
-    for (auto x = l.begin(); x != l.end(); ++x)
-        cout << *std::move(*x) << endl;
+    auto l = Lexer(dfa, str, 2);
+
+    for (auto x : l)
+        cout << x << endl;
 }

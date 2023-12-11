@@ -13,11 +13,10 @@ import <vector>;
 import <type_traits>;
 
 export template<typename T>
-concept is_token_type = requires(T t)
+concept token_type = requires(T t)
 {
     std::is_enum_v<T>;
     { T::UNINITIALISED } -> std::convertible_to<T>;
-    { T::TK_WHITESPACE } -> std::convertible_to<T>;
     { T::TK_NEWLINE } -> std::convertible_to<T>;
     { T::TK_SYMBOL } -> std::convertible_to<T>;
     { T::TK_EOF } -> std::convertible_to<T>;
@@ -27,7 +26,7 @@ concept is_token_type = requires(T t)
 };
 
 template <typename T>
-concept is_transition_info = requires(T t)
+concept transition_info = requires(T t)
 {
 	{ t.from } -> std::convertible_to<int>;
 	{ t.to } -> std::convertible_to<int>;
@@ -35,31 +34,31 @@ concept is_transition_info = requires(T t)
 	{ t.default_transition_state } -> std::convertible_to<int>;
 };
 
-template <typename T, typename Enum>
-concept is_final_state_info = requires(T t)
+template <typename T, typename TokenType>
+concept final_state_info = requires(T t)
 {
 	{ t.state_no } -> std::convertible_to<int>;
-	{ t.token_type } -> std::convertible_to<Enum>;
-    std::is_enum_v<Enum>;
+    { t.token_type } -> std::convertible_to<TokenType>;
+    token_type<TokenType>;
 };
 
-template <typename T, typename Enum>
-concept is_keyword_info = requires(T t)
+template <typename T, typename TokenType>
+concept keyword_info = requires(T t)
 {
 	{ t.keyword } -> std::convertible_to<std::string_view>;
-	{ t.token_type } -> std::convertible_to<Enum>;
-	std::is_enum_v<Enum>;
+	{ t.token_type } -> std::convertible_to<TokenType>;
+    token_type<TokenType>;
 };
 
-template <typename TokenType, typename TransitionInfo, typename FinalStateInfo, typename KeywordInfo>
-requires is_token_type<TokenType> && is_transition_info<TransitionInfo> && is_final_state_info<FinalStateInfo, TokenType> && is_keyword_info<KeywordInfo, TokenType>
+template <token_type TokenType, transition_info TransitionInfo, typename FinalStateInfo, typename KeywordInfo>
+requires final_state_info<FinalStateInfo, TokenType> && keyword_info<KeywordInfo, TokenType>
 struct TypeChecker
 {
     using passed = std::true_type;
 };
 
 export template <
-    typename TokenType,
+    token_type TokenType,
     int num_states,
     int num_keywords
 >
@@ -74,7 +73,7 @@ struct DFA
 };
 
 export template <
-    typename TokenType,
+    token_type TokenType,
     int num_states,
     int num_keywords
 >

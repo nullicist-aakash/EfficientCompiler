@@ -43,14 +43,14 @@ class iterator
     std::size_t line_number{ 1 };
     std::size_t cur_position{ 0 };
 
-    constexpr Status get_status(const std::size_t& start) const
+    constexpr Status get_status() const
     {
         Status status =
         {
             .final_dfa_state = -1,
             .final_state_code_pos = std::numeric_limits<std::size_t>::max(),
             .cur_dfa_state = 0,
-            .cur_code_position = start
+            .cur_code_position = cur_position
         };
 
         while (status.cur_code_position < lexer.source_code.size())
@@ -74,8 +74,10 @@ class iterator
         return status;
     }
 
-    constexpr Token<TokenType> extract_token(Status status, const std::size_t& start) const
+    constexpr Token<TokenType> get_next_token() const
     {
+        const auto& status = get_status();
+        const auto& start = cur_position;
         if (start >= lexer.source_code.size())
             return { TokenType::TK_EOF, "" };
 
@@ -112,7 +114,7 @@ class iterator
 
     constexpr auto get_token_from_dfa()
     {
-        auto tk = extract_token(get_status(cur_position), cur_position);
+        auto tk = get_next_token();
         tk.line_number = line_number;
         line_number += (tk.type == TokenType::TK_NEWLINE) ? 1 : 0;
 

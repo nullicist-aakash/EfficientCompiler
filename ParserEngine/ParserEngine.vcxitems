@@ -17,5 +17,6 @@
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)dfa.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)lexer.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)structures.ixx" />
   </ItemGroup>
 </Project>

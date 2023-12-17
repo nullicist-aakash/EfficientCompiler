@@ -73,7 +73,7 @@ public:
     }
 
     [[nodiscard]]
-    constexpr auto get_size() const
+    constexpr auto size() const
     {
         return cur_size;
     }

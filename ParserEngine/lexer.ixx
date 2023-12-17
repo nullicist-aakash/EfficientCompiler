@@ -1,41 +1,14 @@
 export module parser.lexer;
 import helpers.flatmap;
+import parser.structures;
 
+import helpers.checks;
 import parser.dfa;
 import helpers.reflection;
 import <limits>;
 import <string_view>;
 import <numeric>;
-
-template <typename TokenType, typename T>
-concept keyword_info = requires(T t)
-{
-    { t.keyword } -> std::convertible_to<std::string_view>;
-    { t.token_type } -> std::convertible_to<TokenType>;
-    token_type<TokenType>;
-};
-
-template <token_type TokenType, typename KeywordInfo>
-    requires keyword_info<TokenType, KeywordInfo>
-struct TypeChecker
-{
-    using passed = std::true_type;
-};
-
-template <token_type TokenType>
-struct Token
-{
-    TokenType type = TokenType::UNINITIALISED;
-    std::string_view lexeme{};
-    std::size_t line_number = 0;
-};
-
-export template <typename T, token_type TokenType>
-constexpr T& operator<<(T& out, const Token<TokenType>& tk)
-{
-    out << tk.type << " " << tk.line_number << " " << tk.lexeme;
-    return out;
-}
+import <map>;
 
 using State = int;
 struct Status
@@ -56,7 +29,7 @@ class iterator
     class Lexer;
 
     const Lexer<TokenType, num_states, num_keywords>& lexer;
-    Token<TokenType> token;
+    LexerToken<TokenType> token;
     std::size_t line_number{ 1 };
     std::size_t cur_position{ 0 };
 
@@ -91,7 +64,7 @@ class iterator
         return status;
     }
 
-    constexpr Token<TokenType> get_next_token() const
+    constexpr LexerToken<TokenType> get_next_token() const
     {
         const auto& status = get_status();
         const auto& start = cur_position;
@@ -111,7 +84,7 @@ class iterator
 
         // We return for the last seen final state
         std::size_t len = status.final_state_code_pos - start + 1;
-        Token<TokenType> tk = {
+        LexerToken<TokenType> tk = {
             lexer.dfa.final_states[status.final_dfa_state],
             lexer.source_code.substr(start, len)
         };
@@ -156,22 +129,14 @@ public:
     }
 };
 
-template <token_type TokenType, int num_states, int num_keywords>
-struct Lexer
+export template <typename T, token_type TokenType>
+constexpr T& operator<<(T& out, const LexerToken<TokenType>& tk)
 {
-    DFA<TokenType, num_states> dfa{};
-    flatmap<std::string_view, TokenType, num_keywords> keyword_to_token{};
+    out << tk.type << " " << tk.line_number << " " << tk.lexeme;
+    return out;
+}
 
-    constexpr auto begin() { return iterator{ *this }; }
-    constexpr sentinel end() { return {}; }
-};
-
-export template <
-    typename T,
-    token_type TokenType,
-    int num_states,
-    int num_keywords
->
+export template <typename T, token_type TokenType, int num_states, int num_keywords>
 constexpr T& operator<<(T& out, const Lexer<TokenType, num_states, num_keywords>& lexer)
 {
     out << lexer.dfa << "\nKeywords:\n";
@@ -180,28 +145,41 @@ constexpr T& operator<<(T& out, const Lexer<TokenType, num_states, num_keywords>
     return out;
 }
 
-export consteval auto get_lexer(auto transition_callback, auto final_states_callback, auto keywords_callback)
+template <token_type TokenType, int num_keywords>
+constexpr auto get_keywords_map(const auto& keywords)
+{
+    flatmap<std::string_view, TokenType, num_keywords> keyword_to_token{};
+    for (auto& k : keywords)
+        keyword_to_token.insert(k.keyword, k.token_type);
+
+    return keyword_to_token;
+}
+
+export constexpr auto get_lexer(auto transition_callback, auto final_states_callback, auto keywords_callback)
 {
     constexpr auto transitions = transition_callback();
     constexpr auto final_states = final_states_callback();
     constexpr auto keywords = keywords_callback();
 
-    constexpr auto tc = []() -> auto& { return transitions; };
-    constexpr auto fsc = []() -> auto& { return final_states; };
-
+    constexpr auto num_states = 1 + std::accumulate(transitions.begin(), transitions.end(), 0,
+        [](int ans, const auto& t) {
+            return std::max({ ans, t.from, t.to, t.default_transition_state });
+        }
+    );
     constexpr auto num_keywords = keywords.size();
-    constexpr auto num_states = 1 + std::accumulate(transitions.begin(), transitions.end(), 0, [](int ans, const auto& t) {
-        return std::max({ ans, t.from, t.to, t.default_transition_state });
-        });
-
     using TokenType = decltype(final_states.begin()->token_type);
-    using KeywordInfo = decltype(keywords)::value_type;
 
-    static_assert(TypeChecker<TokenType, KeywordInfo>::passed::value);
+    constexpr auto lexer = Lexer<TokenType, num_states, num_keywords> { 
+        .dfa = get_dfa<num_states>(
+            []() -> auto&& { return transitions; }, 
+            []() -> auto&& { return final_states; }
+        ),
+        .keyword_to_token = get_keywords_map<TokenType, num_keywords>(keywords)
+    };
 
-    auto lexer = Lexer<TokenType, num_states, num_keywords>{ get_dfa<num_states>(tc, fsc) };
-    for (auto& k : keywords)
-        lexer.keyword_to_token.insert(k.keyword, k.token_type);
+    static_assert(lexer.keyword_to_token.size() == num_keywords, "Keywords have a duplicate key!");
 
-    return lexer;
+    return [](std::string_view sv) {
+        return lexer;
+        };
 }

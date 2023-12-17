@@ -1,6 +1,7 @@
 import <string_view>;
 import <array>;
 import parser.lexer;
+import parser.structures;
 
 using std::string_view;
 using std::array;
@@ -57,28 +58,8 @@ enum class TokenType
     TK_ERROR_LENGTH
 };
 
-static consteval auto fetch_dfa()
+static constexpr auto fetch_dfa()
 {
-    struct TransitionInfo
-    {
-        int from{};
-        int to{};
-        string_view pattern{};
-        int default_transition_state{ -1 };
-    };
-
-    struct FinalStateInfo
-    {
-        int state_no;
-        TokenType token_type;
-    };
-
-    struct KeywordInfo
-    {
-        string_view keyword;
-        TokenType token_type;
-    };
-
     using enum TokenType;
 
     constexpr auto transitions = []()
@@ -135,7 +116,7 @@ static consteval auto fetch_dfa()
             return array
             {
                 KeywordInfo{ "M", TK_M },
-                KeywordInfo{ "D", TK_D },
+                KeywordInfo{"D", TK_D},
                 KeywordInfo{ "MD", TK_MD },
                 KeywordInfo{ "A", TK_A },
                 KeywordInfo{ "AM", TK_AM },
@@ -187,6 +168,6 @@ static auto read_file(string_view filename)
 
 int main()
 {
-    auto dfa = fetch_dfa();
+    auto dfa = fetch_dfa()("a");
     cout << dfa << endl;
 }

@@ -6,7 +6,7 @@ import <algorithm>;
 
 struct oversized_array
 {
-    std::array<char, 1024> data{};
+    std::array<char, 1024> data;
     std::size_t size{};
 };
 
@@ -27,7 +27,7 @@ consteval auto to_right_sized_array(auto callable)
 }
 
 template <auto Data>
-consteval void cc_check()
+consteval auto cc_check()
 {
     constexpr auto res = std::string_view(Data.data(), Data.size());
     static_assert(res[0] == '\0', "Compile-time check failed");

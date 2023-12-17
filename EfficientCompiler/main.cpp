@@ -187,11 +187,5 @@ static auto read_file(string_view filename)
 int main()
 {
     auto dfa = fetch_dfa();
-    auto str = read_file("source.jack");
-
-    auto l = Lexer(dfa, str, 2);
-
     cout << dfa << endl;
-    for (auto x : l)
-        cout << x << endl;
 }

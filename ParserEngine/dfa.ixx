@@ -98,30 +98,20 @@ constexpr T& operator<<(T& out, const  DFA<TokenType, num_states, num_keywords>&
     return out;
 }
 
-export consteval auto get_dfa(auto transition_callback, auto final_states_callback, auto keywords_callback)
+consteval auto get_num_states(auto transition_callback, auto final_states_callback)
+{
+	constexpr auto transitions = transition_callback();
+	constexpr auto final_states = final_states_callback();
+    int ans = 0;
+    for (const auto& t : transitions)
+        ans = std::max({ ans, t.from, t.to, t.default_transition_state });
+    return 1 + ans;
+}
+
+template <int num_states>
+consteval auto validate_transitions(auto transition_callback)
 {
     constexpr auto transitions = transition_callback();
-    constexpr auto final_states = final_states_callback();
-    constexpr auto keywords = keywords_callback();
-
-    using TokenType = decltype(final_states[0].token_type);
-    using TransitionInfo = decltype(transitions)::value_type;
-    using FinalStateInfo = decltype(final_states)::value_type;
-    using KeywordInfo = decltype(keywords)::value_type;
-
-    static_assert(TypeChecker<TokenType, TransitionInfo, FinalStateInfo, KeywordInfo>::passed::value);
-
-    constexpr auto num_keywords = keywords.size();
-    constexpr auto num_states_callback = [transitions, final_states]() constexpr
-        {
-            int ans = 0;
-            for (const auto& t : transitions)
-                ans = std::max({ ans, t.from, t.to, t.default_transition_state });
-            return ans;
-        };
-    constexpr auto num_states = 1 + num_states_callback();
-    
-    // IDK why this works, but I can't reduce it further without getting capture error in g++
     constexpr auto validate_transitions = [transitions]() constexpr
         {
             std::vector<int> def_val(num_states + 1, -1);
@@ -181,9 +171,14 @@ export consteval auto get_dfa(auto transition_callback, auto final_states_callba
 
             return "";
         };
-    constexpr auto res_tran = validate_transitions();
-    ct_assert([]() { return res_tran; });
 
+    ct_assert([]() { return validate_transitions(); });
+}
+
+template <token_type TokenType, int num_states>
+consteval auto validate_final_states(auto final_states_callback)
+{
+    constexpr auto final_states = final_states_callback();
     constexpr auto validate_final_states = [final_states]() constexpr
         {
             for (auto& f : final_states)
@@ -215,9 +210,28 @@ export consteval auto get_dfa(auto transition_callback, auto final_states_callba
         };
     constexpr auto res_fin = validate_final_states();
     ct_assert([]() { return res_fin; });
+}
+
+export consteval auto get_dfa(auto transition_callback, auto final_states_callback, auto keywords_callback)
+{
+    constexpr auto transitions = transition_callback();
+    constexpr auto final_states = final_states_callback();
+    constexpr auto keywords = keywords_callback();
+
+    using TokenType = decltype(final_states[0].token_type);
+    using TransitionInfo = decltype(transitions)::value_type;
+    using FinalStateInfo = decltype(final_states)::value_type;
+    using KeywordInfo = decltype(keywords)::value_type;
+
+    static_assert(TypeChecker<TokenType, TransitionInfo, FinalStateInfo, KeywordInfo>::passed::value);
+
+    constexpr auto num_keywords = keywords.size();
+    constexpr auto num_states = get_num_states(transition_callback, final_states_callback);
+    
+    validate_transitions<num_states>(transition_callback);
+    validate_final_states<TokenType, num_states>(final_states_callback);
 
     DFA<TokenType, num_states, num_keywords> dfa;
-
     for (auto& x : dfa.productions)
         x.fill(-1);
 

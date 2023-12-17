@@ -4,6 +4,7 @@ import helpers.flatmap;
 import <string_view>;
 import <type_traits>;
 import <array>;
+import <concepts>;
 
 export template<typename T>
 concept token_type = requires(T t)
@@ -16,6 +17,14 @@ concept token_type = requires(T t)
     { T::TK_ERROR_SYMBOL } -> std::convertible_to<T>;
     { T::TK_ERROR_PATTERN } -> std::convertible_to<T>;
     { T::TK_ERROR_LENGTH } -> std::convertible_to<T>;
+};
+
+export template<class T>
+concept lexer_token = requires(T t, const T& u)
+{
+    requires token_type<decltype(t.type)>;
+    { t.lexeme } -> std::convertible_to<std::string_view>;
+    { t.afterConstruction(u) } -> std::same_as<void>;
 };
 
 export struct TransitionInfo
@@ -38,30 +47,4 @@ struct KeywordInfo
 {
     std::string_view keyword;
     TokenType token_type;
-};
-
-export template <token_type TokenType>
-struct LexerToken
-{
-    TokenType type = TokenType::UNINITIALISED;
-    std::string_view lexeme{};
-    std::size_t line_number = 0;
-};
-
-export template <
-    token_type TokenType,
-    int num_states
->
-struct DFA
-{
-    static const int state_count = num_states;
-    std::array<std::array<int, 128>, num_states> productions{};
-    std::array<TokenType, num_states> final_states{};
-};
-
-export template <token_type TokenType, int num_states, int num_keywords>
-struct Lexer
-{
-    DFA<TokenType, num_states> dfa{};
-    flatmap<std::string_view, TokenType, num_keywords> keyword_to_token{};
 };

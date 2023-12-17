@@ -70,6 +70,87 @@ consteval auto validate_transitions(const auto& transitions)
     return "";
 }
 
+using State = int;
+struct Status
+{
+    State final_dfa_state;
+    std::size_t final_state_code_pos;
+
+    State cur_dfa_state;
+    std::size_t cur_code_position;
+};
+
+
+export template <
+    token_type TokenType,
+    int num_states
+>
+struct DFA
+{
+    static const int state_count = num_states;
+    std::array<std::array<int, 128>, num_states> productions{};
+    std::array<TokenType, num_states> final_states{};
+
+    constexpr Status pass_string(std::string_view input, std::size_t cur_position) const
+    {
+        Status status =
+        {
+            .final_dfa_state = -1,
+            .final_state_code_pos = std::numeric_limits<std::size_t>::max(),
+            .cur_dfa_state = 0,
+            .cur_code_position = cur_position
+        };
+
+        while (status.cur_code_position < input.size())
+        {
+            auto cur_symbol = input[status.cur_code_position];
+            auto next_dfa_state = productions[status.cur_dfa_state][cur_symbol];
+
+            if (next_dfa_state == -1)
+                break;
+
+            if (final_states[next_dfa_state] != TokenType::UNINITIALISED)
+            {
+                status.final_dfa_state = next_dfa_state;
+                status.final_state_code_pos = status.cur_code_position;
+            }
+
+            status.cur_dfa_state = next_dfa_state;
+            status.cur_code_position++;
+        }
+
+        return status;
+    }
+
+    template <lexer_token LexerToken>
+    constexpr LexerToken get_next_token(std::string_view input, std::size_t cur_position) const
+    {
+        const auto& status = pass_string(input, cur_position);
+        const auto& start = cur_position;
+
+        if (start >= input.size())
+            return { TokenType::TK_EOF, "" };
+
+        // We didn't move at all
+        if (status.cur_code_position == start)
+            return { TokenType::TK_ERROR_SYMBOL, input.substr(start, 1) };
+
+        // We moved somewhere but didn't reach any final state
+        if (status.final_dfa_state == -1)
+        {
+            auto len = status.cur_code_position - start + 1;
+            return { TokenType::TK_ERROR_PATTERN, input.substr(start, len) };
+        }
+
+        // We return for the last seen final state
+        std::size_t len = status.final_state_code_pos - start + 1;
+        return {
+            final_states[status.final_dfa_state],
+            input.substr(start, len)
+        };
+    }
+};
+
 template <token_type TokenType, int num_states>
 consteval auto validate_final_states(const auto& final_states)
 {
@@ -106,7 +187,7 @@ export template <
     token_type TokenType,
     int num_states
 >
-constexpr T& operator<<(T& out, const  DFA<TokenType, num_states>& dfa)
+constexpr T& operator<<(T& out, const DFA<TokenType, num_states>& dfa)
 {
     out << "Productions: \n";
     for (int i = 0; i < num_states; ++i)
@@ -126,7 +207,7 @@ constexpr T& operator<<(T& out, const  DFA<TokenType, num_states>& dfa)
 }
 
 export template <int num_states>
-consteval auto get_dfa(auto transition_callback, auto final_states_callback)
+consteval auto build_dfa(auto transition_callback, auto final_states_callback)
 {
     constexpr auto&& transitions = transition_callback();
     constexpr auto&& final_states = final_states_callback();

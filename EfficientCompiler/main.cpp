@@ -2,6 +2,7 @@ import <string_view>;
 import <array>;
 import parser.lexer;
 import parser.structures;
+import helpers.reflection;
 
 using std::string_view;
 using std::array;
@@ -58,7 +59,29 @@ enum class TokenType
     TK_ERROR_LENGTH
 };
 
-static constexpr auto fetch_dfa()
+struct MyLexerToken
+{
+    TokenType type = TokenType::UNINITIALISED;
+    std::string_view lexeme{};
+    int line_num{1};
+
+    void afterConstruction(const MyLexerToken& previous_token)
+    {
+        if (previous_token.type == TokenType::TK_NEWLINE)
+            line_num = previous_token.line_num + 1;
+        else
+            line_num = previous_token.line_num;
+    }
+};
+
+template <typename T>
+constexpr T& operator<<(T& out, const MyLexerToken& tk)
+{
+    out << tk.type << " " << tk.line_num << " " << tk.lexeme;
+    return out;
+}
+
+static constexpr auto get_lexer()
 {
     using enum TokenType;
 
@@ -155,7 +178,7 @@ static constexpr auto fetch_dfa()
             };
         };
 
-    return get_lexer(transitions, final_states, keywords);
+    return build_lexer<MyLexerToken>(transitions, final_states, keywords);
 }
 
 static auto read_file(string_view filename)
@@ -168,6 +191,8 @@ static auto read_file(string_view filename)
 
 int main()
 {
-    auto dfa = fetch_dfa()("a");
-    cout << dfa << endl;
+    auto lexer = get_lexer();
+    auto contents = read_file("source.jack");
+    for (auto& x : lexer(contents))
+        cout << x << endl;
 }

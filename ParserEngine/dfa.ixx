@@ -1,5 +1,4 @@
 export module parser.dfa;
-import helpers.flatmap;
 import helpers.checks;
 import helpers.reflection;
 
@@ -31,7 +30,7 @@ concept transition_info = requires(T t)
 	{ t.default_transition_state } -> std::convertible_to<int>;
 };
 
-template <typename T, typename TokenType>
+template <typename TokenType, typename T>
 concept final_state_info = requires(T t)
 {
 	{ t.state_no } -> std::convertible_to<int>;
@@ -40,7 +39,7 @@ concept final_state_info = requires(T t)
 };
 
 template <token_type TokenType, transition_info TransitionInfo, typename FinalStateInfo>
-requires final_state_info<FinalStateInfo, TokenType>
+requires final_state_info<TokenType, FinalStateInfo>
 struct TypeChecker
 {
     using passed = std::true_type;
@@ -81,21 +80,11 @@ constexpr T& operator<<(T& out, const  DFA<TokenType, num_states>& dfa)
     return out;
 }
 
-static consteval auto get_num_states(auto transition_callback, auto final_states_callback)
-{
-	constexpr auto transitions = transition_callback();
-	constexpr auto final_states = final_states_callback();
-    int ans = 0;
-    for (const auto& t : transitions)
-        ans = std::max({ ans, t.from, t.to, t.default_transition_state });
-    return 1 + ans;
-}
-
 template <int num_states>
 consteval auto validate_transitions(auto transition_callback)
 {
-    constexpr auto transitions = transition_callback();
-    constexpr auto validate_transitions = [transitions]() constexpr
+    constexpr auto&& transitions = transition_callback();
+    constexpr auto validate_transitions = []() constexpr
         {
             std::vector<int> def_val(num_states + 1, -1);
             for (int i = 0; i < transitions.size(); ++i)
@@ -161,8 +150,8 @@ consteval auto validate_transitions(auto transition_callback)
 template <token_type TokenType, int num_states>
 consteval auto validate_final_states(auto final_states_callback)
 {
-    constexpr auto final_states = final_states_callback();
-    constexpr auto validate_final_states = [final_states]() constexpr
+    constexpr auto&& final_states = final_states_callback();
+    constexpr auto validate_final_states = []() constexpr
         {
             for (auto& f : final_states)
                 if (f.state_no < 0 || f.state_no > num_states)
@@ -195,21 +184,23 @@ consteval auto validate_final_states(auto final_states_callback)
     ct_assert([]() { return res_fin; });
 }
 
-export consteval auto get_dfa(auto transition_callback, auto final_states_callback)
+export template <int num_states>
+consteval auto get_dfa(auto transition_callback, auto final_states_callback)
 {
-    constexpr auto transitions = transition_callback();
-    constexpr auto final_states = final_states_callback();
+    constexpr auto&& transitions = transition_callback();
+    constexpr auto&& final_states = final_states_callback();
 
-    using TokenType = decltype(final_states[0].token_type);
-    using TransitionInfo = decltype(transitions)::value_type;
-    using FinalStateInfo = decltype(final_states)::value_type;
+    constexpr auto tc = []() -> auto&& { return std::forward<decltype(transitions)>(transitions); };
+    constexpr auto fsc = []() -> auto&& { return std::forward<decltype(final_states)>(final_states); };
+
+    using TokenType = decltype(final_states.begin()->token_type);
+    using TransitionInfo = std::remove_reference_t<decltype(transitions)>::value_type;
+    using FinalStateInfo = std::remove_reference_t<decltype(final_states)>::value_type;
 
     static_assert(TypeChecker<TokenType, TransitionInfo, FinalStateInfo>::passed::value);
 
-    constexpr auto num_states = get_num_states(transition_callback, final_states_callback);
-    
-    validate_transitions<num_states>(transition_callback);
-    validate_final_states<TokenType, num_states>(final_states_callback);
+    validate_transitions<num_states>(tc);
+    validate_final_states<TokenType, num_states>(fsc);
 
     DFA<TokenType, num_states> dfa;
     for (auto& x : dfa.productions)

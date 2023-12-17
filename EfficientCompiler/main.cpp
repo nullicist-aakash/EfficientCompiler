@@ -5,6 +5,7 @@ import parser.lexer;
 using std::string_view;
 using std::array;
 
+#include <numeric>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -173,7 +174,7 @@ static consteval auto fetch_dfa()
             };
         };
 
-    return get_dfa(transitions, final_states);
+    return get_lexer(transitions, final_states, keywords);
 }
 
 static auto read_file(string_view filename)

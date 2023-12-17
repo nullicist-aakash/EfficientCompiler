@@ -1,9 +1,20 @@
 export module parser.lexer;
+import helpers.flatmap;
 
 export import parser.dfa;
 import helpers.reflection;
 import <limits>;
 import <string_view>;
+
+
+template <typename T, typename TokenType>
+concept keyword_info = requires(T t)
+{
+    { t.keyword } -> std::convertible_to<std::string_view>;
+    { t.token_type } -> std::convertible_to<TokenType>;
+    token_type<TokenType>;
+};
+
 
 template <token_type TokenType>
 struct Token
@@ -30,15 +41,15 @@ struct Status
     std::size_t cur_code_position;
 };
 
-template <token_type TokenType, int num_states, int num_keywords>
+template <token_type TokenType, int num_states>
 class Lexer;
 
 struct sentinel {};
 
-template <token_type TokenType, int num_states, int num_keywords>
+template <token_type TokenType, int num_states>
 class iterator
 {
-    const Lexer<TokenType, num_states, num_keywords>& lexer;
+    const Lexer<TokenType, num_states>& lexer;
     Token<TokenType> token;
     std::size_t line_number{ 1 };
     std::size_t cur_position{ 0 };
@@ -127,7 +138,7 @@ class iterator
     }
 
 public:
-    constexpr iterator(Lexer<TokenType, num_states, num_keywords>& l) : lexer{l}, cur_position{0}
+    constexpr iterator(Lexer<TokenType, num_states>& l) : lexer{l}, cur_position{0}
     {
         token = get_token_from_dfa();
     }
@@ -139,18 +150,33 @@ public:
     }
 };
 
-export template <token_type TokenType, int num_states, int num_keywords>
+export template <token_type TokenType, int num_states>
 class Lexer
 {
-    const DFA<TokenType, num_states, num_keywords>& dfa;
-    const std::string_view source_code;
-    const int symbol_length_limit;
+    const DFA<TokenType, num_states>& dfa; 
+    std::string_view source_code;
 
-    friend class iterator<TokenType, num_states, num_keywords>;
+    friend class iterator<TokenType, num_states>;
 public:
     constexpr auto begin() { return iterator{ *this }; }
     constexpr sentinel end() { return {}; }
 
-    constexpr Lexer(DFA<TokenType, num_states, num_keywords>& dfa, std::string_view sc, int symbol_length_limit = 50)
-        : dfa{ dfa }, source_code{ sc }, symbol_length_limit{ symbol_length_limit } {}
+    constexpr Lexer(DFA<TokenType, num_states>& dfa, std::string_view sc)
+        : dfa{ dfa }, source_code{ sc } {}
 };
+
+export template <
+    typename T,
+    token_type TokenType,
+    int num_states
+>
+constexpr T& operator<<(T& out, const Lexer<TokenType, num_states>& lexer)
+{
+    out << lexer.dfa << "\n";
+    return out;
+}
+
+export consteval auto get_lexer(auto transition_callback, auto final_states_callback, auto keyword_callback)
+{
+
+}

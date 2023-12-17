@@ -173,7 +173,7 @@ static consteval auto fetch_dfa()
             };
         };
 
-    return get_dfa(transitions, final_states, keywords);
+    return get_dfa(transitions, final_states);
 }
 
 static auto read_file(string_view filename)

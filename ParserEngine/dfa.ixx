@@ -39,16 +39,8 @@ concept final_state_info = requires(T t)
     token_type<TokenType>;
 };
 
-template <typename T, typename TokenType>
-concept keyword_info = requires(T t)
-{
-	{ t.keyword } -> std::convertible_to<std::string_view>;
-	{ t.token_type } -> std::convertible_to<TokenType>;
-    token_type<TokenType>;
-};
-
-template <token_type TokenType, transition_info TransitionInfo, typename FinalStateInfo, typename KeywordInfo>
-requires final_state_info<FinalStateInfo, TokenType> && keyword_info<KeywordInfo, TokenType>
+template <token_type TokenType, transition_info TransitionInfo, typename FinalStateInfo>
+requires final_state_info<FinalStateInfo, TokenType>
 struct TypeChecker
 {
     using passed = std::true_type;
@@ -56,26 +48,21 @@ struct TypeChecker
 
 export template <
     token_type TokenType,
-    int num_states,
-    int num_keywords
+    int num_states
 >
 struct DFA
 {
+    static const int state_count = num_states;
     std::array<std::array<int, 128>, num_states> productions{};
     std::array<TokenType, num_states> final_states{};
-    flatmap<std::string_view, TokenType, num_keywords> keyword_to_token{};
-
-    static const int state_count = num_states;
-    static const int keyword_count = num_keywords;
 };
 
 export template <
     typename T,
     token_type TokenType,
-    int num_states,
-    int num_keywords
+    int num_states
 >
-constexpr T& operator<<(T& out, const  DFA<TokenType, num_states, num_keywords>& dfa)
+constexpr T& operator<<(T& out, const  DFA<TokenType, num_states>& dfa)
 {
     out << "Productions: \n";
     for (int i = 0; i < num_states; ++i)
@@ -91,14 +78,10 @@ constexpr T& operator<<(T& out, const  DFA<TokenType, num_states, num_keywords>&
         if (dfa.final_states[i] != TokenType::UNINITIALISED)
             out << i << ": " << dfa.final_states[i] << '\n';
 
-    out << "\nKeywords:\n";
-    for (const auto& [k, v] : dfa.keyword_to_token)
-        out << k << ": " << v << '\n';
-
     return out;
 }
 
-consteval auto get_num_states(auto transition_callback, auto final_states_callback)
+static consteval auto get_num_states(auto transition_callback, auto final_states_callback)
 {
 	constexpr auto transitions = transition_callback();
 	constexpr auto final_states = final_states_callback();
@@ -212,26 +195,23 @@ consteval auto validate_final_states(auto final_states_callback)
     ct_assert([]() { return res_fin; });
 }
 
-export consteval auto get_dfa(auto transition_callback, auto final_states_callback, auto keywords_callback)
+export consteval auto get_dfa(auto transition_callback, auto final_states_callback)
 {
     constexpr auto transitions = transition_callback();
     constexpr auto final_states = final_states_callback();
-    constexpr auto keywords = keywords_callback();
 
     using TokenType = decltype(final_states[0].token_type);
     using TransitionInfo = decltype(transitions)::value_type;
     using FinalStateInfo = decltype(final_states)::value_type;
-    using KeywordInfo = decltype(keywords)::value_type;
 
-    static_assert(TypeChecker<TokenType, TransitionInfo, FinalStateInfo, KeywordInfo>::passed::value);
+    static_assert(TypeChecker<TokenType, TransitionInfo, FinalStateInfo>::passed::value);
 
-    constexpr auto num_keywords = keywords.size();
     constexpr auto num_states = get_num_states(transition_callback, final_states_callback);
     
     validate_transitions<num_states>(transition_callback);
     validate_final_states<TokenType, num_states>(final_states_callback);
 
-    DFA<TokenType, num_states, num_keywords> dfa;
+    DFA<TokenType, num_states> dfa;
     for (auto& x : dfa.productions)
         x.fill(-1);
 
@@ -259,9 +239,6 @@ export consteval auto get_dfa(auto transition_callback, auto final_states_callba
 
     for (auto& f : final_states)
         dfa.final_states[f.state_no] = f.token_type;
-
-    for (auto& k : keywords)
-        dfa.keyword_to_token.insert(k.keyword, k.token_type);
 
     return dfa;
 }

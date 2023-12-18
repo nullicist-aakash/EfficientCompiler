@@ -93,8 +93,9 @@ template <token_type TokenType, lexer_token LT, int num_states, int num_keywords
 struct Lexer
 {
     using UserTokenType = std::variant_alternative_t<0, TokenType>;
-    DFA<TokenType, num_states> dfa{};
-    flatmap<std::string_view, UserTokenType, num_keywords> keyword_to_token{};
+    
+    DFA<TokenType, num_states> dfa;
+    flatmap<std::string_view, UserTokenType, num_keywords> keyword_to_token;
 
     constexpr auto operator()(std::string_view source_code) const
     {
@@ -123,7 +124,7 @@ consteval auto get_keywords_map(const auto& keywords)
 }
 
 export template <lexer_token LT>
-constexpr auto build_lexer(auto transition_callback, auto final_states_callback, auto keywords_callback)
+consteval auto build_lexer(auto transition_callback, auto final_states_callback, auto keywords_callback)
 {
     constexpr auto transitions = transition_callback();
     constexpr auto final_states = final_states_callback();
@@ -138,14 +139,15 @@ constexpr auto build_lexer(auto transition_callback, auto final_states_callback,
     using TokenType = decltype(LT::type);
     using UserTokenType = std::variant_alternative_t<0, TokenType>;
 
-    Lexer<TokenType, LT, num_states, num_keywords> lexer;
-    lexer.dfa = build_dfa<TokenType, num_states>(
-        []() -> auto&& { return transitions; },
-        []() -> auto&& { return final_states; }
-    );
-    lexer.keyword_to_token = get_keywords_map<UserTokenType, num_keywords>(keywords);
+    constexpr auto lexer = Lexer<TokenType, LT, num_states, num_keywords>{
+        .dfa = build_dfa<TokenType, num_states>(
+            []() -> auto&& { return transitions; },
+            []() -> auto&& { return final_states; }
+            ),
+        .keyword_to_token = get_keywords_map<UserTokenType, num_keywords>(keywords)
+    };
 
-    // static_assert(lexer.keyword_to_token.size() == num_keywords, "Keywords have a duplicate key!");
+    static_assert(lexer.keyword_to_token.size() == num_keywords, "Keywords have a duplicate key!");
 
     return lexer;
 }

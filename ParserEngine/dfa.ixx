@@ -29,8 +29,8 @@ struct DFA
     using UserTokenType = std::variant_alternative_t<0, TokenType>;
     using ErrorTokenType = std::variant_alternative_t<1, TokenType>;
     static const int state_count = num_states;
-    std::array<std::array<int, 128>, num_states> productions{};
-    std::array<TokenType, num_states> final_states{};
+    std::array<std::array<int, 128>, num_states> productions;
+    std::array<TokenType, num_states> final_states;
 
     constexpr Status pass_string(std::string_view input, std::size_t cur_position) const
     {
@@ -197,10 +197,22 @@ constexpr T& operator<<(T& out, const DFA<TokenType, num_states>& dfa)
     return out;
 }
 
-export template <token_type TokenType, int num_states>
-constexpr auto build_dfa(auto transition_callback, auto final_states_callback)
+template <token_type TokenType, int num_states>
+static consteval auto get_empty_array()
 {
     using ErrorTokenType = std::variant_alternative_t<1, TokenType>;
+    std::array<TokenType, num_states> final_states;
+    for (auto& x : final_states)
+        x = ErrorTokenType::UNINITIALISED;
+
+    return final_states;
+}
+
+export template <token_type TokenType, int num_states>
+consteval auto build_dfa(auto transition_callback, auto final_states_callback)
+{
+    using UserTokenType = std::variant_alternative_t<0, TokenType>;
+
     constexpr auto&& transitions = transition_callback();
     constexpr auto&& final_states = final_states_callback();
 
@@ -236,9 +248,6 @@ constexpr auto build_dfa(auto transition_callback, auto final_states_callback)
         for (auto c : t.pattern)
             dfa.productions[fr][c] = to;
     }
-
-    for (auto &f: dfa.final_states)
-        f = ErrorTokenType::UNINITIALISED;
 
     for (auto& f : final_states)
         dfa.final_states[f.state_no] = f.token_type;

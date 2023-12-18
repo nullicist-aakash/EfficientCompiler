@@ -1,5 +1,6 @@
 import <string_view>;
 import <array>;
+import <variant>;
 import parser.lexer;
 import parser.structures;
 import helpers.reflection;
@@ -13,9 +14,8 @@ using std::array;
 #include <sstream>
 using namespace std;
 
-enum class TokenType
+enum class MyTokenType
 {
-    UNINITIALISED,
     TK_OB,
     TK_CB,
     TK_ASSIGN,
@@ -52,22 +52,21 @@ enum class TokenType
     TK_THAT,
     TK_REG,
     TK_SCREEN,
-    TK_KBD,
-    TK_EOF,
-    TK_ERROR_SYMBOL,
-    TK_ERROR_PATTERN,
-    TK_ERROR_LENGTH
+    TK_KBD
 };
 
 struct MyLexerToken
 {
-    TokenType type = TokenType::UNINITIALISED;
+    variant<MyTokenType, TokenErrors> type = TokenErrors::UNINITIALISED;
     std::string_view lexeme{};
     int line_num{1};
 
-    void afterConstruction(const MyLexerToken& previous_token)
+    constexpr void afterConstruction(const MyLexerToken& previous_token)
     {
-        if (previous_token.type == TokenType::TK_NEWLINE)
+        if (holds_alternative<TokenErrors>(previous_token.type))
+            return;
+
+        if (get<MyTokenType>(previous_token.type) == MyTokenType::TK_NEWLINE)
             line_num = previous_token.line_num + 1;
         else
             line_num = previous_token.line_num;
@@ -77,13 +76,13 @@ struct MyLexerToken
 template <typename T>
 constexpr T& operator<<(T& out, const MyLexerToken& tk)
 {
-    out << tk.type << " " << tk.line_num << " " << tk.lexeme;
+    out << tk.line_num << " " << tk.lexeme;
     return out;
 }
 
 static constexpr auto get_lexer()
 {
-    using enum TokenType;
+    using enum MyTokenType;
 
     constexpr auto transitions = []()
         {
@@ -193,6 +192,9 @@ int main()
 {
     auto lexer = get_lexer();
     auto contents = read_file("source.jack");
-    for (auto& x : lexer(contents))
+
+    for (auto& x : lexer("Hello"))
         cout << x << endl;
+
+    cout << lexer << endl;
 }

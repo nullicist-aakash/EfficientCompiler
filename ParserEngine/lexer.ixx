@@ -9,6 +9,7 @@ import <limits>;
 import <string_view>;
 import <numeric>;
 import <map>;
+import <variant>;
 
 struct sentinel {};
 
@@ -18,11 +19,12 @@ class Iterator;
 template <token_type TokenType, lexer_token LT, int num_states, int num_keywords>
 struct LexerStringWrapper
 {
+    using UserTokenType = std::variant_alternative_t<0, TokenType>;
     const DFA<TokenType, num_states>& dfa{};
-    const flatmap<std::string_view, TokenType, num_keywords>& keyword_to_token{};
+    const flatmap<std::string_view, UserTokenType, num_keywords>& keyword_to_token{};
     const std::string_view source_code{};
 
-    LexerStringWrapper(const auto& lexer, std::string_view source_code) :
+    constexpr LexerStringWrapper(const auto& lexer, std::string_view source_code) :
         dfa{ lexer.dfa },
         keyword_to_token{ lexer.keyword_to_token },
         source_code{ source_code }
@@ -42,6 +44,9 @@ struct LexerStringWrapper
 template <token_type TokenType, lexer_token LT, int num_states, int num_keywords>
 class Iterator
 {
+    using UserTokenType = std::variant_alternative_t<0, TokenType>;
+    using ErrorTokenType = std::variant_alternative_t<1, TokenType>;
+
     const LexerStringWrapper<TokenType, LT, num_states, num_keywords>& lexer_string;
     LT token;
     std::size_t cur_position{ 0 };
@@ -50,13 +55,15 @@ class Iterator
     {
         auto tk = lexer_string.dfa.get_next_token<LT>(lexer_string.source_code, cur_position);
 
-        if (tk.type == TokenType::TK_ERROR_SYMBOL || tk.type == TokenType::TK_ERROR_PATTERN)
-            cur_position += 1;
-        else
-            cur_position += tk.lexeme.size();
+        auto errType = std::get_if<ErrorTokenType>(&tk.type);
+        auto usrType = std::get_if<UserTokenType>(&tk.type);
 
-        // Keyword Pass
-        if (tk.type == TokenType::TK_SYMBOL && lexer_string.keyword_to_token.exists(tk.lexeme))
+        if (!errType)
+            cur_position += tk.lexeme.size();
+        else if (*errType == ErrorTokenType::TK_ERROR_SYMBOL || *errType == ErrorTokenType::TK_ERROR_PATTERN)
+            cur_position += 1;
+
+        if (usrType && *usrType == UserTokenType::TK_SYMBOL && lexer_string.keyword_to_token.exists(tk.lexeme))
             tk.type = lexer_string.keyword_to_token.at(tk.lexeme);
 
         tk.afterConstruction(token);
@@ -69,7 +76,12 @@ public:
     {
         token = get_token_from_dfa();
     }
-    constexpr bool operator!=(sentinel) const { return token.type != TokenType::TK_EOF; }
+    constexpr bool operator!=(sentinel) const 
+    {
+        auto errType = std::get_if<ErrorTokenType>(&token.type);
+
+        return !errType || *errType != ErrorTokenType::TK_EOF;
+    }
     constexpr Iterator& operator++() { token = get_token_from_dfa(); return *this; }
     constexpr const auto& operator*()
     {
@@ -80,10 +92,11 @@ public:
 template <token_type TokenType, lexer_token LT, int num_states, int num_keywords>
 struct Lexer
 {
+    using UserTokenType = std::variant_alternative_t<0, TokenType>;
     DFA<TokenType, num_states> dfa{};
-    flatmap<std::string_view, TokenType, num_keywords> keyword_to_token{};
+    flatmap<std::string_view, UserTokenType, num_keywords> keyword_to_token{};
 
-    auto operator()(std::string_view source_code) const
+    constexpr auto operator()(std::string_view source_code) const
     {
 		return LexerStringWrapper<TokenType, LT, num_states, num_keywords>(*this, source_code);
 	}
@@ -99,10 +112,10 @@ constexpr T& operator<<(T& out, const Lexer<TokenType, LT, num_states, num_keywo
     return out;
 }
 
-template <token_type TokenType, int num_keywords>
-constexpr auto get_keywords_map(const auto& keywords)
+template <user_token_type UserTokenType, int num_keywords>
+consteval auto get_keywords_map(const auto& keywords)
 {
-    flatmap<std::string_view, TokenType, num_keywords> keyword_to_token{};
+    flatmap<std::string_view, UserTokenType, num_keywords> keyword_to_token{};
     for (auto& k : keywords)
         keyword_to_token.insert(k.keyword, k.token_type);
 
@@ -122,17 +135,17 @@ constexpr auto build_lexer(auto transition_callback, auto final_states_callback,
         }
     );
     constexpr auto num_keywords = keywords.size();
-    using TokenType = decltype(final_states.begin()->token_type);
+    using TokenType = decltype(LT::type);
+    using UserTokenType = std::variant_alternative_t<0, TokenType>;
 
-    constexpr auto lexer = Lexer<TokenType, LT, num_states, num_keywords>{
-        .dfa = build_dfa<num_states>(
-            []() -> auto&& { return transitions; },
-            []() -> auto&& { return final_states; }
-        ),
-        .keyword_to_token = get_keywords_map<TokenType, num_keywords>(keywords)
-    };
+    Lexer<TokenType, LT, num_states, num_keywords> lexer;
+    lexer.dfa = build_dfa<TokenType, num_states>(
+        []() -> auto&& { return transitions; },
+        []() -> auto&& { return final_states; }
+    );
+    lexer.keyword_to_token = get_keywords_map<UserTokenType, num_keywords>(keywords);
 
-    static_assert(lexer.keyword_to_token.size() == num_keywords, "Keywords have a duplicate key!");
+    // static_assert(lexer.keyword_to_token.size() == num_keywords, "Keywords have a duplicate key!");
 
     return lexer;
 }

@@ -8,6 +8,89 @@ import <string_view>;
 import <algorithm>;
 import <vector>;
 import <type_traits>;
+import <variant>;
+
+using State = int;
+struct Status
+{
+    State final_dfa_state;
+    std::size_t final_state_code_pos;
+
+    State cur_dfa_state;
+    std::size_t cur_code_position;
+};
+
+export template <
+    token_type TokenType,
+    int num_states
+>
+struct DFA
+{
+    using UserTokenType = std::variant_alternative_t<0, TokenType>;
+    using ErrorTokenType = std::variant_alternative_t<1, TokenType>;
+    static const int state_count = num_states;
+    std::array<std::array<int, 128>, num_states> productions{};
+    std::array<TokenType, num_states> final_states{};
+
+    constexpr Status pass_string(std::string_view input, std::size_t cur_position) const
+    {
+        Status status =
+        {
+            .final_dfa_state = -1,
+            .final_state_code_pos = std::numeric_limits<std::size_t>::max(),
+            .cur_dfa_state = 0,
+            .cur_code_position = cur_position
+        };
+
+        while (status.cur_code_position < input.size())
+        {
+            auto cur_symbol = input[status.cur_code_position];
+            auto next_dfa_state = productions[status.cur_dfa_state][cur_symbol];
+
+            if (next_dfa_state == -1)
+                break;
+
+            if (std::get_if<UserTokenType>(&final_states[next_dfa_state]))
+            {
+                status.final_dfa_state = next_dfa_state;
+                status.final_state_code_pos = status.cur_code_position;
+            }
+
+            status.cur_dfa_state = next_dfa_state;
+            status.cur_code_position++;
+        }
+
+        return status;
+    }
+
+    template <lexer_token LexerToken>
+    constexpr LexerToken get_next_token(std::string_view input, std::size_t cur_position) const
+    {
+        const auto& status = pass_string(input, cur_position);
+        const auto& start = cur_position;
+
+        if (start >= input.size())
+            return { ErrorTokenType::TK_EOF, "" };
+
+        // We didn't move at all
+        if (status.cur_code_position == start)
+            return { ErrorTokenType::TK_ERROR_SYMBOL, input.substr(start, 1) };
+
+        // We moved somewhere but didn't reach any final state
+        if (status.final_dfa_state == -1)
+        {
+            auto len = status.cur_code_position - start + 1;
+            return { ErrorTokenType::TK_ERROR_PATTERN, input.substr(start, len) };
+        }
+
+        // We return for the last seen final state
+        std::size_t len = status.final_state_code_pos - start + 1;
+        return {
+            final_states[status.final_dfa_state],
+            input.substr(start, len)
+        };
+    }
+};
 
 template <int num_states>
 consteval auto validate_transitions(const auto& transitions)
@@ -70,111 +153,18 @@ consteval auto validate_transitions(const auto& transitions)
     return "";
 }
 
-using State = int;
-struct Status
-{
-    State final_dfa_state;
-    std::size_t final_state_code_pos;
-
-    State cur_dfa_state;
-    std::size_t cur_code_position;
-};
-
-
-export template <
-    token_type TokenType,
-    int num_states
->
-struct DFA
-{
-    static const int state_count = num_states;
-    std::array<std::array<int, 128>, num_states> productions{};
-    std::array<TokenType, num_states> final_states{};
-
-    constexpr Status pass_string(std::string_view input, std::size_t cur_position) const
-    {
-        Status status =
-        {
-            .final_dfa_state = -1,
-            .final_state_code_pos = std::numeric_limits<std::size_t>::max(),
-            .cur_dfa_state = 0,
-            .cur_code_position = cur_position
-        };
-
-        while (status.cur_code_position < input.size())
-        {
-            auto cur_symbol = input[status.cur_code_position];
-            auto next_dfa_state = productions[status.cur_dfa_state][cur_symbol];
-
-            if (next_dfa_state == -1)
-                break;
-
-            if (final_states[next_dfa_state] != TokenType::UNINITIALISED)
-            {
-                status.final_dfa_state = next_dfa_state;
-                status.final_state_code_pos = status.cur_code_position;
-            }
-
-            status.cur_dfa_state = next_dfa_state;
-            status.cur_code_position++;
-        }
-
-        return status;
-    }
-
-    template <lexer_token LexerToken>
-    constexpr LexerToken get_next_token(std::string_view input, std::size_t cur_position) const
-    {
-        const auto& status = pass_string(input, cur_position);
-        const auto& start = cur_position;
-
-        if (start >= input.size())
-            return { TokenType::TK_EOF, "" };
-
-        // We didn't move at all
-        if (status.cur_code_position == start)
-            return { TokenType::TK_ERROR_SYMBOL, input.substr(start, 1) };
-
-        // We moved somewhere but didn't reach any final state
-        if (status.final_dfa_state == -1)
-        {
-            auto len = status.cur_code_position - start + 1;
-            return { TokenType::TK_ERROR_PATTERN, input.substr(start, len) };
-        }
-
-        // We return for the last seen final state
-        std::size_t len = status.final_state_code_pos - start + 1;
-        return {
-            final_states[status.final_dfa_state],
-            input.substr(start, len)
-        };
-    }
-};
-
-template <token_type TokenType, int num_states>
+template <int num_states>
 consteval auto validate_final_states(const auto& final_states)
 {
     for (auto& f : final_states)
         if (f.state_no < 0 || f.state_no > num_states)
-            return "An entry for state in final states is out of range";
+            return "An entry for state number in final states is out of range.";
 
     std::vector<bool> visited(num_states, false);
     for (auto& f : final_states)
     {
         if (visited[f.state_no])
-            return "Multiple entries for same state in final states";
-
-        if (f.token_type == TokenType::TK_ERROR_SYMBOL)
-            return "Final state can't be TK_ERROR_SYMBOL";
-
-        if (f.token_type == TokenType::TK_ERROR_PATTERN)
-            return "Final state can't be TK_ERROR_PATTERN";
-
-        if (f.token_type == TokenType::TK_ERROR_LENGTH)
-            return "Final state can't be TK_ERROR_LENGTH";
-
-        if (f.token_type == TokenType::TK_EOF)
-            return "Final state can't be TK_EOF";
+            return "Multiple entries for same state in final states.";
 
         visited[f.state_no] = true;
     }
@@ -189,6 +179,7 @@ export template <
 >
 constexpr T& operator<<(T& out, const DFA<TokenType, num_states>& dfa)
 {
+    using UserTokenType = std::variant_alternative_t<0, TokenType>;
     out << "Productions: \n";
     for (int i = 0; i < num_states; ++i)
     {
@@ -200,27 +191,27 @@ constexpr T& operator<<(T& out, const DFA<TokenType, num_states>& dfa)
 
     out << "\nFinal States :\n";
     for (int i = 0; i < num_states; ++i)
-        if (dfa.final_states[i] != TokenType::UNINITIALISED)
-            out << i << ": " << dfa.final_states[i] << '\n';
+        if (auto usrType = std::get_if<UserTokenType>(&dfa.final_states[i]); usrType)
+            out << i << ": " << *usrType << '\n';
 
     return out;
 }
 
-export template <int num_states>
-consteval auto build_dfa(auto transition_callback, auto final_states_callback)
+export template <token_type TokenType, int num_states>
+constexpr auto build_dfa(auto transition_callback, auto final_states_callback)
 {
+    using ErrorTokenType = std::variant_alternative_t<1, TokenType>;
     constexpr auto&& transitions = transition_callback();
     constexpr auto&& final_states = final_states_callback();
 
     constexpr auto fsc = []() -> auto&& { return std::forward<decltype(final_states)>(final_states); };
 
-    using TokenType = decltype(final_states.begin()->token_type);
-
     // We can directly use static_assert here once we have C++26.
     ct_assert([]() { return validate_transitions<num_states>(transitions); });
-    ct_assert([]() { return validate_final_states<TokenType, num_states>(final_states); });
+    ct_assert([]() { return validate_final_states<num_states>(final_states); });
 
     DFA<TokenType, num_states> dfa;
+
     for (auto& x : dfa.productions)
         x.fill(-1);
 
@@ -245,6 +236,9 @@ consteval auto build_dfa(auto transition_callback, auto final_states_callback)
         for (auto c : t.pattern)
             dfa.productions[fr][c] = to;
     }
+
+    for (auto &f: dfa.final_states)
+        f = ErrorTokenType::UNINITIALISED;
 
     for (auto& f : final_states)
         dfa.final_states[f.state_no] = f.token_type;

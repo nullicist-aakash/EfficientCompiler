@@ -3,6 +3,7 @@ import <string_view>;
 import <array>;
 import <source_location>;
 import <type_traits>;
+import <variant>;
 
 template <typename Enum, Enum e>
 consteval auto get_enum_full_name()

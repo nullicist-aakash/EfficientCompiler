@@ -6,12 +6,12 @@ import <type_traits>;
 import <variant>;
 
 template <typename Enum, Enum e>
-consteval auto get_enum_full_name()
+static consteval auto get_enum_full_name()
 {
     return std::source_location::current().function_name();
 }
 
-consteval std::string_view get_enum_filtered_name(auto callable)
+static consteval std::string_view get_enum_filtered_name(auto callable)
 {
     constexpr auto result = callable();
     constexpr std::string_view str = get_enum_full_name<decltype(result), result>();
@@ -64,11 +64,3 @@ constexpr ostream& operator<<(ostream& out, const T& token)
     out << get_token_string(token);
     return out;
 }
-
-// TESTING
-enum class TestEnum
-{
-    A, B, C
-};
-
-static_assert(get_enum_array<TestEnum>().size() == 3);

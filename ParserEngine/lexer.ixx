@@ -13,10 +13,10 @@ import <variant>;
 
 struct sentinel {};
 
-template <token_type TokenType, lexer_token LT, int num_states, int num_keywords>
+template <is_token_type TokenType, is_lexer_token LT, int num_states, int num_keywords>
 class Iterator;
 
-template <token_type TokenType, lexer_token LT, int num_states, int num_keywords>
+template <is_token_type TokenType, is_lexer_token LT, int num_states, int num_keywords>
 struct LexerStringWrapper
 {
     using UserTokenType = std::variant_alternative_t<0, TokenType>;
@@ -41,11 +41,10 @@ struct LexerStringWrapper
     }
 };
 
-template <token_type TokenType, lexer_token LT, int num_states, int num_keywords>
+template <is_token_type TokenType, is_lexer_token LT, int num_states, int num_keywords>
 class Iterator
 {
     using UserTokenType = std::variant_alternative_t<0, TokenType>;
-    using ErrorTokenType = std::variant_alternative_t<1, TokenType>;
 
     const LexerStringWrapper<TokenType, LT, num_states, num_keywords>& lexer_string;
     LT token;
@@ -83,13 +82,13 @@ public:
         return !errType || *errType != ErrorTokenType::TK_EOF;
     }
     constexpr Iterator& operator++() { token = get_token_from_dfa(); return *this; }
-    constexpr const auto& operator*()
+    constexpr const auto& operator*() const
     {
         return token;
     }
 };
 
-template <token_type TokenType, lexer_token LT, int num_states, int num_keywords>
+template <is_token_type TokenType, is_lexer_token LT, int num_states, int num_keywords>
 struct Lexer
 {
     using UserTokenType = std::variant_alternative_t<0, TokenType>;
@@ -103,7 +102,7 @@ struct Lexer
 	}
 };
 
-export template <typename T, token_type TokenType, lexer_token LT, int num_states, int num_keywords>
+export template <typename T, is_token_type TokenType, is_lexer_token LT, int num_states, int num_keywords>
 constexpr T& operator<<(T& out, const Lexer<TokenType, LT, num_states, num_keywords>& lexer)
 {
     out << lexer.dfa << "\nKeywords:\n";
@@ -113,7 +112,7 @@ constexpr T& operator<<(T& out, const Lexer<TokenType, LT, num_states, num_keywo
     return out;
 }
 
-template <user_token_type UserTokenType, int num_keywords>
+template <is_user_token_type UserTokenType, int num_keywords>
 consteval auto get_keywords_map(const auto& keywords)
 {
     flatmap<std::string_view, UserTokenType, num_keywords> keyword_to_token{};
@@ -123,7 +122,7 @@ consteval auto get_keywords_map(const auto& keywords)
     return keyword_to_token;
 }
 
-export template <lexer_token LT>
+export template <is_lexer_token LT>
 consteval auto build_lexer(auto transition_callback, auto final_states_callback, auto keywords_callback)
 {
     constexpr auto transitions = transition_callback();

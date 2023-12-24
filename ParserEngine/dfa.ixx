@@ -21,13 +21,12 @@ struct Status
 };
 
 export template <
-    token_type TokenType,
+    is_token_type TokenType,
     int num_states
 >
 struct DFA
 {
     using UserTokenType = std::variant_alternative_t<0, TokenType>;
-    using ErrorTokenType = std::variant_alternative_t<1, TokenType>;
     static const int state_count = num_states;
     std::array<std::array<int, 128>, num_states> productions;
     std::array<TokenType, num_states> final_states;
@@ -69,7 +68,7 @@ struct DFA
         return status;
     }
 
-    template <lexer_token LexerToken>
+    template <is_lexer_token LexerToken>
     constexpr LexerToken get_next_token(std::string_view input, std::size_t cur_position) const
     {
         const auto& status = pass_string(input, cur_position);
@@ -180,7 +179,7 @@ consteval auto validate_final_states(const auto& final_states)
 
 export template <
     typename T,
-    token_type TokenType,
+    is_token_type TokenType,
     int num_states
 >
 constexpr T& operator<<(T& out, const DFA<TokenType, num_states>& dfa)
@@ -203,18 +202,7 @@ constexpr T& operator<<(T& out, const DFA<TokenType, num_states>& dfa)
     return out;
 }
 
-template <token_type TokenType, int num_states>
-static consteval auto get_empty_array()
-{
-    using ErrorTokenType = std::variant_alternative_t<1, TokenType>;
-    std::array<TokenType, num_states> final_states;
-    for (auto& x : final_states)
-        x = ErrorTokenType::UNINITIALISED;
-
-    return final_states;
-}
-
-export template <token_type TokenType, int num_states>
+export template <is_token_type TokenType, int num_states>
 consteval auto build_dfa(auto transition_callback, auto final_states_callback)
 {
     using UserTokenType = std::variant_alternative_t<0, TokenType>;

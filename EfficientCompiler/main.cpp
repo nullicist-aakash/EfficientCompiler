@@ -14,7 +14,7 @@ using std::array;
 #include <sstream>
 using namespace std;
 
-enum class MyTokenType
+enum class UserTokenType
 {
     TK_OB,
     TK_CB,
@@ -55,18 +55,18 @@ enum class MyTokenType
     TK_KBD
 };
 
-struct MyLexerToken
+struct LexerToken
 {
-    variant<MyTokenType, TokenErrors> type = TokenErrors::UNINITIALISED;
+    variant<UserTokenType, ErrorTokenType> type = ErrorTokenType::UNINITIALISED;
     std::string_view lexeme{};
     int line_num{1};
 
-    constexpr void afterConstruction(const MyLexerToken& previous_token)
+    constexpr void afterConstruction(const LexerToken& previous_token)
     {
-        if (holds_alternative<TokenErrors>(previous_token.type))
+        if (holds_alternative<ErrorTokenType>(previous_token.type))
             return;
 
-        if (get<MyTokenType>(previous_token.type) == MyTokenType::TK_NEWLINE)
+        if (get<UserTokenType>(previous_token.type) == UserTokenType::TK_NEWLINE)
             line_num = previous_token.line_num + 1;
         else
             line_num = previous_token.line_num;
@@ -74,7 +74,7 @@ struct MyLexerToken
 };
 
 template <typename T>
-constexpr T& operator<<(T& out, const MyLexerToken& tk)
+constexpr T& operator<<(T& out, const LexerToken& tk)
 {
     out << tk.line_num << " " << tk.lexeme;
     return out;
@@ -82,7 +82,7 @@ constexpr T& operator<<(T& out, const MyLexerToken& tk)
 
 static consteval auto get_lexer()
 {
-    using enum MyTokenType;
+    using enum UserTokenType;
 
     constexpr auto transitions = []()
         {
@@ -177,7 +177,7 @@ static consteval auto get_lexer()
             };
         };
 
-    return build_lexer<MyLexerToken>(transitions, final_states, keywords);
+    return build_lexer<LexerToken>(transitions, final_states, keywords);
 }
 
 static auto read_file(string_view filename)
@@ -193,8 +193,6 @@ int main()
     constexpr auto lexer = get_lexer();
     auto contents = read_file("source.jack");
 
-    for (auto& x : lexer("Hello"))
+    for (auto& x : lexer(contents))
         cout << x << endl;
-
-    cout << lexer << endl;
 }

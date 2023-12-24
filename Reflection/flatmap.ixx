@@ -12,6 +12,7 @@ class flatmap
     std::array<std::pair<Key, Value>, Size> data{};
     std::size_t cur_size{};
 
+    [[nodiscard]]
     constexpr std::optional<Value*> get_val(const Key& key)
     {
         auto bgn = std::begin(data);

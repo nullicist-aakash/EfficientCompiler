@@ -32,6 +32,12 @@ struct DFA
     std::array<std::array<int, 128>, num_states> productions;
     std::array<TokenType, num_states> final_states;
 
+    constexpr DFA()
+    {
+        for (auto& x : final_states)
+			x = ErrorTokenType::UNINITIALISED;
+    }
+
     constexpr Status pass_string(std::string_view input, std::size_t cur_position) const
     {
         Status status =

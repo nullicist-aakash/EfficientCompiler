@@ -80,7 +80,7 @@ constexpr T& operator<<(T& out, const MyLexerToken& tk)
     return out;
 }
 
-static constexpr auto get_lexer()
+static consteval auto get_lexer()
 {
     using enum MyTokenType;
 
@@ -177,20 +177,7 @@ static constexpr auto get_lexer()
             };
         };
 
-    auto lexer = build_lexer<MyLexerToken>(transitions, final_states, keywords);
-    
-    // This code is here because variant is not allowing me to edit values in consteval context
-    array<int, lexer.dfa.state_count> states;
-    for (auto& x : states)
-        x = 0;
-    for (auto &x: final_states())
-        states[x.state_no] = 1;
-
-    for (int i = 0; i < states.size(); ++i)
-        if (states[i] == 0)
-            lexer.dfa.final_states[i] = TokenErrors::UNINITIALISED;
-
-    return lexer;
+    return build_lexer<MyLexerToken>(transitions, final_states, keywords);
 }
 
 static auto read_file(string_view filename)
@@ -203,7 +190,7 @@ static auto read_file(string_view filename)
 
 int main()
 {
-    auto lexer = get_lexer();
+    constexpr auto lexer = get_lexer();
     auto contents = read_file("source.jack");
 
     for (auto& x : lexer("Hello"))

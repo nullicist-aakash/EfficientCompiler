@@ -9,8 +9,9 @@ import <array>;
 import <bitset>;
 import <map>;
 import <string_view>;
+import <type_traits>;
 
-template <is_terminal Terminal, is_non_terminal NonTerminal>
+template <is_non_terminal NonTerminal, is_terminal Terminal>
 struct Parser
 {
 	static constexpr auto num_terminals = get_size<Terminal>();
@@ -20,8 +21,10 @@ public:
 	std::array<std::array<int, num_terminals>, num_symbols> parseTable;
 };
 
-template <is_terminal Terminal, is_non_terminal NonTerminal>
-consteval auto get_parser(auto production_callback)
+export template <is_non_terminal NonTerminal, is_terminal Terminal>
+constexpr auto build_parser(auto production_callback)
 {
-	return parser;
+	auto productions = production_callback();
+
+	return productions;
 }

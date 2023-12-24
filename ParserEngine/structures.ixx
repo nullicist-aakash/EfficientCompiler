@@ -7,6 +7,7 @@ import <array>;
 import <vector>;
 import <concepts>;
 import <variant>;
+import <cassert>;
 
 export enum class SpecialToken;
 
@@ -71,9 +72,17 @@ struct KeywordInfo
     TerminalType token_type;
 };
 
-export template <is_non_terminal NonTerminalType, is_terminal TerminalType>
+export template <is_non_terminal NonTerminalType, is_terminal TerminalType, int max_prod_len=30>
 struct ProductionInfo
 {
     NonTerminalType start;
-    std::vector<std::variant<TerminalType, NonTerminalType>> production;
+    std::array<std::variant<TerminalType, NonTerminalType>, max_prod_len> production;
+    std::size_t size;
+
+    constexpr ProductionInfo(NonTerminalType start, std::vector<std::variant<TerminalType, NonTerminalType>> production)
+        : start(start), size(production.size())
+    {
+        for (std::size_t i = 0; i < production.size(); ++i)
+			this->production[i] = production[i];
+	}
 };

@@ -10,16 +10,6 @@ import <vector>;
 import <type_traits>;
 import <variant>;
 
-using State = int;
-struct Status
-{
-    State final_dfa_state;
-    std::size_t final_state_code_pos;
-
-    State cur_dfa_state;
-    std::size_t cur_code_position;
-};
-
 export template <
     is_token_type TokenType,
     int num_states
@@ -37,8 +27,18 @@ struct DFA
 			x = ErrorTokenType::UNINITIALISED;
     }
 
-    constexpr Status pass_string(std::string_view input, std::size_t cur_position) const
+    constexpr auto pass_string(std::string_view input, std::size_t cur_position) const
     {
+        using State = int;
+        struct Status
+        {
+            State final_dfa_state;
+            std::size_t final_state_code_pos;
+
+            State cur_dfa_state;
+            std::size_t cur_code_position;
+        };
+
         Status status =
         {
             .final_dfa_state = -1,

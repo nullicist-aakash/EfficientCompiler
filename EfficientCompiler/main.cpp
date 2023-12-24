@@ -342,7 +342,7 @@ static auto read_file(string_view filename)
 int main()
 {
     constexpr auto lexer = get_lexer();
-    auto par = get_parser();
+    constexpr auto par = get_parser();
     auto contents = read_file("source.jack");
 
     for (auto& x : lexer(contents))

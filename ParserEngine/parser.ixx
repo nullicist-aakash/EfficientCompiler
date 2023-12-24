@@ -24,7 +24,7 @@ public:
 export template <is_non_terminal NonTerminal, is_terminal Terminal>
 constexpr auto build_parser(auto production_callback)
 {
-	auto productions = production_callback();
+	constexpr auto productions = production_callback();
 
 	return productions;
 }

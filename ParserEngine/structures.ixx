@@ -79,7 +79,7 @@ struct ProductionInfo
     std::array<std::variant<TerminalType, NonTerminalType>, max_prod_len> production;
     std::size_t size;
 
-    constexpr ProductionInfo(NonTerminalType start, std::vector<std::variant<TerminalType, NonTerminalType>> production)
+    constexpr ProductionInfo(NonTerminalType start, const std::vector<std::variant<TerminalType, NonTerminalType>>& production)
         : start(start), size(production.size())
     {
         for (std::size_t i = 0; i < production.size(); ++i)

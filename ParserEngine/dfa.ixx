@@ -24,7 +24,7 @@ struct DFA
     constexpr DFA()
     {
         for (auto& x : final_states)
-			x = ErrorTokenType::UNINITIALISED;
+			x = SpecialToken::UNINITIALISED;
     }
 
     constexpr auto pass_string(std::string_view input, std::size_t cur_position) const
@@ -75,17 +75,17 @@ struct DFA
         const auto& start = cur_position;
 
         if (start >= input.size())
-            return { ErrorTokenType::TK_EOF, "" };
+            return { SpecialToken::END_INPUT, "" };
 
         // We didn't move at all
         if (status.cur_code_position == start)
-            return { ErrorTokenType::TK_ERROR_SYMBOL, input.substr(start, 1) };
+            return { SpecialToken::ERR_SYMBOL, input.substr(start, 1) };
 
         // We moved somewhere but didn't reach any final state
         if (status.final_dfa_state == -1)
         {
             auto len = status.cur_code_position - start + 1;
-            return { ErrorTokenType::TK_ERROR_PATTERN, input.substr(start, len) };
+            return { SpecialToken::ERR_PATTERN, input.substr(start, len) };
         }
 
         // We return for the last seen final state

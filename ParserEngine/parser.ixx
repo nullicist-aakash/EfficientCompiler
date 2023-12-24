@@ -3,30 +3,25 @@ export module compiler_engine.parser;
 import compiler_engine.lexer;
 import compiler_engine.structures;
 import helpers.flatmap;
+import helpers.reflection;
 
-import <vector>;
+import <array>;
 import <bitset>;
 import <map>;
 import <string_view>;
 
-template <is_terminal Terminal, is_terminal NonTerminal>
-class Parser
+template <is_terminal Terminal, is_non_terminal NonTerminal>
+struct Parser
 {
+	static constexpr auto num_terminals = get_size<Terminal>();
+	static constexpr auto num_non_terminals = get_size<NonTerminal>();
+	static constexpr auto num_symbols = num_terminals + num_non_terminals;
 public:
-	int num_non_terminals;
-	int num_terminals;
-	int start_index;
-
-	std::vector<std::vector<int>> productions;
-	std::vector<std::string> symbolType2symbolStr;
-	std::map<std::string, int> symbolStr2symbolType;
-	std::bitset<128> nullable;
-	std::vector<std::bitset<128>> firstSet;
-	std::vector<std::bitset<128>> followSet;
-	std::vector<std::vector<int>> parseTable;
-
-	Parser() : num_non_terminals{ 0 }, num_terminals{ 0 }, start_index{ 0 }
-	{
-
-	}
+	std::array<std::array<int, num_terminals>, num_symbols> parseTable;
 };
+
+template <is_terminal Terminal, is_non_terminal NonTerminal>
+consteval auto get_parser(auto production_callback)
+{
+	return parser;
+}

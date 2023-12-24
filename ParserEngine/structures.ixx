@@ -4,24 +4,33 @@ import helpers.flatmap;
 import <string_view>;
 import <type_traits>;
 import <array>;
+import <vector>;
 import <concepts>;
 import <variant>;
 
-export enum class ErrorTokenType;
+export enum class SpecialToken;
 
 export template<typename T>
 concept is_terminal = requires(T t)
 {
     requires std::is_enum_v<T>;
-    { T::TK_SYMBOL };
+    { T::IDENTIFIER };
+};
+
+export template<typename T>
+concept is_non_terminal = requires(T t)
+{
+	requires std::is_enum_v<T>;
+    { T::eps };
+    { T::start };
 };
 
 export template<typename T, typename TerminalType = std::variant_alternative_t<0, T>>
 concept is_token_type = requires(T t)
 {
     requires is_terminal<TerminalType>;
-    requires !std::is_same_v<TerminalType, ErrorTokenType>;
-    requires std::is_same_v<std::variant_alternative_t<1, T>, ErrorTokenType>;
+    requires !std::is_same_v<TerminalType, SpecialToken>;
+    requires std::is_same_v<std::variant_alternative_t<1, T>, SpecialToken>;
 };
 
 export template<class T>
@@ -32,12 +41,12 @@ concept is_lexer_token = requires(T t, const T& u)
     { t.afterConstruction(u) } -> std::same_as<void>;
 };
 
-enum class ErrorTokenType
+enum class SpecialToken
 {
     UNINITIALISED,
-    TK_ERROR_SYMBOL,
-    TK_ERROR_PATTERN,
-    TK_EOF
+    ERR_SYMBOL,
+    ERR_PATTERN,
+    END_INPUT
 };
 
 export struct TransitionInfo
@@ -60,4 +69,11 @@ struct KeywordInfo
 {
     std::string_view keyword;
     TerminalType token_type;
+};
+
+export template <is_non_terminal NonTerminalType, is_terminal TerminalType>
+struct ProductionInfo
+{
+    NonTerminalType start;
+    std::vector<std::variant<TerminalType, NonTerminalType>> production;
 };

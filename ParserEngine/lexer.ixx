@@ -54,15 +54,15 @@ class Iterator
     {
         auto tk = lexer_string.dfa.get_next_token<LT>(lexer_string.source_code, cur_position);
 
-        auto errType = std::get_if<ErrorTokenType>(&tk.type);
+        auto errType = std::get_if<SpecialToken>(&tk.type);
         auto usrType = std::get_if<TerminalType>(&tk.type);
 
         if (!errType)
             cur_position += tk.lexeme.size();
-        else if (*errType == ErrorTokenType::TK_ERROR_SYMBOL || *errType == ErrorTokenType::TK_ERROR_PATTERN)
+        else if (*errType == SpecialToken::ERR_SYMBOL || *errType == SpecialToken::ERR_PATTERN)
             cur_position += 1;
 
-        if (usrType && *usrType == TerminalType::TK_SYMBOL && lexer_string.keyword_to_token.exists(tk.lexeme))
+        if (usrType && *usrType == TerminalType::IDENTIFIER && lexer_string.keyword_to_token.exists(tk.lexeme))
             tk.type = lexer_string.keyword_to_token.at(tk.lexeme);
 
         tk.afterConstruction(token);
@@ -77,9 +77,9 @@ public:
     }
     constexpr bool operator!=(sentinel) const 
     {
-        auto errType = std::get_if<ErrorTokenType>(&token.type);
+        auto errType = std::get_if<SpecialToken>(&token.type);
 
-        return !errType || *errType != ErrorTokenType::TK_EOF;
+        return !errType || *errType != SpecialToken::END_INPUT;
     }
     constexpr Iterator& operator++() { token = get_token_from_dfa(); return *this; }
     constexpr const auto& operator*() const

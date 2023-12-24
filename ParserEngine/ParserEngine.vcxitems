@@ -4,7 +4,7 @@
     <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     <HasSharedItems>true</HasSharedItems>
     <ItemsProjectGuid>{22a4c2ae-e022-46fd-ae12-d388f61640c3}</ItemsProjectGuid>
-    <ItemsProjectName>parser</ItemsProjectName>
+    <ItemsProjectName>Compiler Engine</ItemsProjectName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -17,6 +17,7 @@
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)dfa.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)lexer.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)parser.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)structures.ixx" />
   </ItemGroup>
 </Project>

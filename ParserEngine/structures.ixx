@@ -1,4 +1,4 @@
-export module parser.structures;
+export module compiler_engine.structures;
 
 import helpers.flatmap;
 import <string_view>;
@@ -10,17 +10,17 @@ import <variant>;
 export enum class ErrorTokenType;
 
 export template<typename T>
-concept is_user_token_type = requires(T t)
+concept is_terminal = requires(T t)
 {
     requires std::is_enum_v<T>;
     { T::TK_SYMBOL };
 };
 
-export template<typename T, typename UserTokenType = std::variant_alternative_t<0, T>>
+export template<typename T, typename TerminalType = std::variant_alternative_t<0, T>>
 concept is_token_type = requires(T t)
 {
-    requires is_user_token_type<UserTokenType>;
-    requires !std::is_same_v<UserTokenType, ErrorTokenType>;
+    requires is_terminal<TerminalType>;
+    requires !std::is_same_v<TerminalType, ErrorTokenType>;
     requires std::is_same_v<std::variant_alternative_t<1, T>, ErrorTokenType>;
 };
 
@@ -48,16 +48,16 @@ export struct TransitionInfo
     int default_transition_state{ -1 };
 };
 
-export template <is_user_token_type UserTokenType>
+export template <is_terminal TerminalType>
 struct FinalStateInfo
 {
     int state_no;
-    UserTokenType token_type;
+    TerminalType token_type;
 };
 
-export template <is_user_token_type UserTokenType>
+export template <is_terminal TerminalType>
 struct KeywordInfo
 {
     std::string_view keyword;
-    UserTokenType token_type;
+    TerminalType token_type;
 };

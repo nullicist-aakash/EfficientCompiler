@@ -1,7 +1,7 @@
-export module parser.dfa;
+export module compiler_engine.dfa;
 import helpers.checks;
 import helpers.reflection;
-import parser.structures;
+import compiler_engine.structures;
 
 import <array>;
 import <string_view>;
@@ -16,7 +16,7 @@ export template <
 >
 struct DFA
 {
-    using UserTokenType = std::variant_alternative_t<0, TokenType>;
+    using TerminalType = std::variant_alternative_t<0, TokenType>;
     static const int state_count = num_states;
     std::array<std::array<int, 128>, num_states> productions;
     std::array<TokenType, num_states> final_states;
@@ -55,7 +55,7 @@ struct DFA
             if (next_dfa_state == -1)
                 break;
 
-            if (std::get_if<UserTokenType>(&final_states[next_dfa_state]))
+            if (std::get_if<TerminalType>(&final_states[next_dfa_state]))
             {
                 status.final_dfa_state = next_dfa_state;
                 status.final_state_code_pos = status.cur_code_position;
@@ -184,7 +184,7 @@ export template <
 >
 constexpr T& operator<<(T& out, const DFA<TokenType, num_states>& dfa)
 {
-    using UserTokenType = std::variant_alternative_t<0, TokenType>;
+    using TerminalType = std::variant_alternative_t<0, TokenType>;
     out << "Productions: \n";
     for (int i = 0; i < num_states; ++i)
     {
@@ -196,7 +196,7 @@ constexpr T& operator<<(T& out, const DFA<TokenType, num_states>& dfa)
 
     out << "\nFinal States :\n";
     for (int i = 0; i < num_states; ++i)
-        if (auto usrType = std::get_if<UserTokenType>(&dfa.final_states[i]); usrType)
+        if (auto usrType = std::get_if<TerminalType>(&dfa.final_states[i]); usrType)
             out << i << ": " << *usrType << '\n';
 
     return out;
@@ -205,7 +205,7 @@ constexpr T& operator<<(T& out, const DFA<TokenType, num_states>& dfa)
 export template <is_token_type TokenType, int num_states>
 consteval auto build_dfa(auto transition_callback, auto final_states_callback)
 {
-    using UserTokenType = std::variant_alternative_t<0, TokenType>;
+    using TerminalType = std::variant_alternative_t<0, TokenType>;
 
     constexpr auto&& transitions = transition_callback();
     constexpr auto&& final_states = final_states_callback();

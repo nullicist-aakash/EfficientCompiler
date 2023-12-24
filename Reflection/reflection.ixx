@@ -64,3 +64,9 @@ constexpr ostream& operator<<(ostream& out, const T& token)
     out << get_token_string(token);
     return out;
 }
+
+export template <typename T> requires std::is_enum_v<T>
+constexpr auto get_size()
+{
+	return get_enum_array<T>().size();
+}

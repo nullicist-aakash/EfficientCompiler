@@ -4,5 +4,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)lexer.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)dfa.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)structures.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)parser.ixx" />
   </ItemGroup>
 </Project>

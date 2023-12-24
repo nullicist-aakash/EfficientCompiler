@@ -1,8 +1,9 @@
 import <string_view>;
 import <array>;
 import <variant>;
-import parser.lexer;
-import parser.structures;
+import compiler_engine.lexer;
+import compiler_engine.parser;
+import compiler_engine.structures;
 import helpers.reflection;
 
 using std::string_view;
@@ -14,7 +15,7 @@ using std::array;
 #include <sstream>
 using namespace std;
 
-enum class UserTokenType
+enum class Terminal
 {
     TK_OB,
     TK_CB,
@@ -57,7 +58,7 @@ enum class UserTokenType
 
 struct LexerToken
 {
-    variant<UserTokenType, ErrorTokenType> type = ErrorTokenType::UNINITIALISED;
+    variant<Terminal, ErrorTokenType> type = ErrorTokenType::UNINITIALISED;
     std::string_view lexeme{};
     int line_num{1};
 
@@ -66,7 +67,7 @@ struct LexerToken
         if (holds_alternative<ErrorTokenType>(previous_token.type))
             return;
 
-        if (get<UserTokenType>(previous_token.type) == UserTokenType::TK_NEWLINE)
+        if (get<Terminal>(previous_token.type) == Terminal::TK_NEWLINE)
             line_num = previous_token.line_num + 1;
         else
             line_num = previous_token.line_num;
@@ -82,7 +83,7 @@ constexpr T& operator<<(T& out, const LexerToken& tk)
 
 static consteval auto get_lexer()
 {
-    using enum UserTokenType;
+    using enum Terminal;
 
     constexpr auto transitions = []()
         {

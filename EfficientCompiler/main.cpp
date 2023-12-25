@@ -2,6 +2,8 @@ import <string_view>;
 import <array>;
 import <vector>;
 import <variant>;
+import <ranges>;
+import <algorithm>;
 import compiler_engine.lexer;
 import compiler_engine.parser;
 import compiler_engine.structures;
@@ -132,6 +134,15 @@ constexpr T& operator<<(T& out, const LexerToken& tk)
     return out;
 }
 
+template <typename T, typename U, typename V>
+constexpr T& operator<<(T& out, const std::variant<U, V>& vr)
+{
+    if (holds_alternative<U>(vr))
+        return out << get<U>(vr);
+    return out << get<V>(vr);
+}
+
+
 static consteval auto get_lexer()
 {
     using enum Terminal;
@@ -242,7 +253,7 @@ static consteval auto get_lexer()
     return build_lexer<LexerToken>(transitions, final_states, keywords);
 }
 
-static constexpr auto get_parser()
+static consteval auto get_parser()
 {
     using enum NonTerminal;
     using enum Terminal;
@@ -342,8 +353,13 @@ static auto read_file(string_view filename)
 int main()
 {
     constexpr auto lexer = get_lexer();
-    constexpr auto par = get_parser();
     auto contents = read_file("source.jack");
+
+
+    auto par = get_parser();
+    for (int i = 0; i < par.size(); ++i)
+        if (par[i])
+            cout << (NonTerminal)i << endl;
 
     for (auto& x : lexer(contents))
         cout << x << endl;

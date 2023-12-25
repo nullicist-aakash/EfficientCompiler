@@ -11,7 +11,11 @@ import <map>;
 import <string_view>;
 import <type_traits>;
 import <variant>;
+import <ranges>;
+import <algorithm>;
 import <bitset>;
+import <functional>;
+import <utility>;
 
 template <is_non_terminal NonTerminal, is_terminal Terminal>
 struct Parser
@@ -24,72 +28,55 @@ public:
 };
 
 template <typename T, typename U>
-bool operator==(const std::variant<T, U>& lhs, const T& rhs)
+constexpr bool operator==(const std::variant<T, U>& lhs, const T& rhs)
 {
 	return std::holds_alternative<T>(lhs) && std::get<T>(lhs) == rhs;
 }
 
 template <typename T, typename U>
-bool operator==(const std::variant<T, U>& lhs, const U& rhs)
+constexpr bool operator==(const std::variant<T, U>& lhs, const U& rhs)
 {
 	return std::holds_alternative<U>(lhs) && std::get<U>(lhs) == rhs;
 }
 
-template <is_non_terminal NonTerminal, is_terminal Terminal, auto num_non_terminals>
-constexpr auto get_nullable_set(auto production_callback)
+template <is_non_terminal NonTerminal, is_terminal Terminal>
+consteval auto get_nullable_set(auto production_callback)
 {
-	constexpr auto& productions = production_callback();
-
 	// Returns an array of size num_non_terminals, where ith index=true means (Nonterminal)i is nullable
-	std::array<bool, num_non_terminals> nullable_set;
-	for (auto& x : nullable_set)
-		x = false;
+	using SET_TYPE = std::bitset<get_size<NonTerminal>()>;
+	SET_TYPE nullable_set;
+	nullable_set.reset();
+	nullable_set.set((int)NonTerminal::eps);
 
-	// Cover eps case
-	nullable_set[(int)NonTerminal::eps] = true;
-
-	// Cover case of NT -> eps
-	for (auto& x : productions)
-		if (x.production.size() == 1 && x.production[0] == NonTerminal::eps)
-			nullable_set[(int)x.start] = true;
-
-	// Iterate until no more changes
+	constexpr auto& productions = production_callback();
 	while (true)
 	{
-		bool changed = false;
-		for (auto& x : productions)
-		{
-			// If NT -> A1 A2 ... An, and all Ai are nullable, then NT is nullable
-			bool all_nullable = true;
-			for (auto& y : x.production)
-			{
-				if (std::holds_alternative<Terminal>(y))
-					all_nullable = false;
-				else if (!nullable_set[(int)std::get<NonTerminal>(y)])
-					all_nullable = false;
-			}
+		auto new_nullable = SET_TYPE{};
+		for (auto &x: productions
+			| std::views::filter([&](auto& x) { return !nullable_set[(int)x.start]; })
+			| std::views::filter([&](auto& x) { return std::ranges::none_of(
+				x.production
+				| std::views::take(x.size)
+				| std::views::transform([&](auto& y)
+					{ return std::holds_alternative<Terminal>(y) || !nullable_set[(int)std::get<NonTerminal>(y)]; }),
+				std::identity()); })
+			)
+			new_nullable.set((int)x.start);
 
-			if (all_nullable && !nullable_set[(int)x.start])
-			{
-				nullable_set[(int)x.start] = true;
-				changed = true;
-			}
-		}
-
-		if (changed)
+		if (new_nullable == SET_TYPE{})
 			break;
+
+		nullable_set |= new_nullable;
 	}
 
 	return nullable_set;
 }
 
-export constexpr auto build_parser(auto production_callback)
+export consteval auto build_parser(auto production_callback)
 {
 	constexpr auto productions = production_callback();
 	using Terminal = std::remove_cvref_t<decltype(productions[0])>::TType;
 	using NonTerminal = std::remove_cvref_t<decltype(productions[0])>::NTType;
 
-	constexpr auto num_non_terminals = get_size<NonTerminal>();
-
-	return get_nullable_set<NonTerminal, Terminal, num_non_terminals>([]() -> auto& {return productions; });
+	return get_nullable_set<NonTerminal, Terminal>([]() -> auto& {return productions; });
 }

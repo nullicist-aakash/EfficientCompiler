@@ -9,20 +9,21 @@ import <concepts>;
 import <variant>;
 import <cassert>;
 
-export enum class SpecialToken;
+export enum class LexerErrorToken;
 
 export template<typename T>
 concept is_terminal = requires(T t)
 {
     requires std::is_enum_v<T>;
     { T::IDENTIFIER };
+    { T::eps };
+    { T::TK_EOF };
 };
 
 export template<typename T>
 concept is_non_terminal = requires(T t)
 {
 	requires std::is_enum_v<T>;
-    { T::eps };
     { T::start };
 };
 
@@ -30,8 +31,8 @@ export template<typename T, typename TerminalType = std::variant_alternative_t<0
 concept is_token_type = requires(T t)
 {
     requires is_terminal<TerminalType>;
-    requires !std::is_same_v<TerminalType, SpecialToken>;
-    requires std::is_same_v<std::variant_alternative_t<1, T>, SpecialToken>;
+    requires !std::is_same_v<TerminalType, LexerErrorToken>;
+    requires std::is_same_v<std::variant_alternative_t<1, T>, LexerErrorToken>;
 };
 
 export template<class T>
@@ -42,12 +43,11 @@ concept is_lexer_token = requires(T t, const T& u)
     { t.afterConstruction(u) } -> std::same_as<void>;
 };
 
-enum class SpecialToken
+enum class LexerErrorToken
 {
     UNINITIALISED,
     ERR_SYMBOL,
-    ERR_PATTERN,
-    END_INPUT
+    ERR_PATTERN
 };
 
 export struct TransitionInfo

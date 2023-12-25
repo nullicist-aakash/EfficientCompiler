@@ -24,7 +24,7 @@ struct DFA
     constexpr DFA()
     {
         for (auto& x : final_states)
-			x = SpecialToken::UNINITIALISED;
+			x = LexerErrorToken::UNINITIALISED;
     }
 
     constexpr auto pass_string(std::string_view input, std::size_t cur_position) const
@@ -71,21 +71,24 @@ struct DFA
     template <is_lexer_token LexerToken>
     constexpr LexerToken get_next_token(std::string_view input, std::size_t cur_position) const
     {
+        using TokenType = decltype(LexerToken::type);
+        using TerminalType = std::variant_alternative_t<0, TokenType>;
+
         const auto& status = pass_string(input, cur_position);
         const auto& start = cur_position;
 
         if (start >= input.size())
-            return { SpecialToken::END_INPUT, "" };
+            return { TerminalType::TK_EOF, "" };
 
         // We didn't move at all
         if (status.cur_code_position == start)
-            return { SpecialToken::ERR_SYMBOL, input.substr(start, 1) };
+            return { LexerErrorToken::ERR_SYMBOL, input.substr(start, 1) };
 
         // We moved somewhere but didn't reach any final state
         if (status.final_dfa_state == -1)
         {
             auto len = status.cur_code_position - start + 1;
-            return { SpecialToken::ERR_PATTERN, input.substr(start, len) };
+            return { LexerErrorToken::ERR_PATTERN, input.substr(start, len) };
         }
 
         // We return for the last seen final state

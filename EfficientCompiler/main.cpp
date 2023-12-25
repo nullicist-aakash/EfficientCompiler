@@ -20,6 +20,7 @@ using namespace std;
 
 enum class Terminal
 {
+    eps,
     COMMENT,
     CLASS,
     CONSTRUCTOR,
@@ -64,12 +65,12 @@ enum class Terminal
     NUM,
     STR,
     IDENTIFIER,
-    WHITESPACE
+    WHITESPACE,
+    TK_EOF
 };
 
 enum class NonTerminal
 {
-    eps,
     start,
     _class,
     class_vars,
@@ -109,7 +110,7 @@ enum class NonTerminal
 
 struct LexerToken
 {
-    variant<Terminal, SpecialToken> type = SpecialToken::UNINITIALISED;
+    variant<Terminal, LexerErrorToken> type = LexerErrorToken::UNINITIALISED;
     std::string_view lexeme{};
     int line_num{1};
 
@@ -120,20 +121,6 @@ struct LexerToken
     }
 };
 
-template <typename T>
-constexpr T& operator<<(T& out, const LexerToken& tk)
-{
-    out << tk.line_num << " ";
-    
-    if (holds_alternative<SpecialToken>(tk.type))
-		out << "(Error) " << get<SpecialToken>(tk.type);
-	else
-		out << "(Token) " << get<Terminal>(tk.type);
-
-    out << " " << tk.lexeme;
-    return out;
-}
-
 template <typename T, typename U, typename V>
 constexpr T& operator<<(T& out, const std::variant<U, V>& vr)
 {
@@ -142,6 +129,12 @@ constexpr T& operator<<(T& out, const std::variant<U, V>& vr)
     return out << get<V>(vr);
 }
 
+template <typename T>
+constexpr T& operator<<(T& out, const LexerToken& tk)
+{
+    out << tk.line_num << " " << tk.type << " " << tk.lexeme;
+    return out;
+}
 
 static consteval auto get_lexer()
 {
@@ -253,13 +246,13 @@ static consteval auto get_lexer()
     return build_lexer<LexerToken>(transitions, final_states, keywords);
 }
 
-static consteval auto get_parser()
+static constexpr auto get_parser()
 {
     using enum NonTerminal;
     using enum Terminal;
     using PI = ProductionInfo<NonTerminal, Terminal, 30>;
     return build_parser([]() { return array {
-        PI(start, { _class }),
+        PI(start, { _class, TK_EOF }),
         PI(_class, { CLASS, IDENTIFIER, CURO, class_vars, subroutineDecs, CURC }),
         PI(class_vars, { class_var, class_vars }),
         PI(class_vars, { eps }),
@@ -355,12 +348,13 @@ int main()
     constexpr auto lexer = get_lexer();
     auto contents = read_file("source.jack");
 
-
     auto par = get_parser();
     for (int i = 0; i < par.size(); ++i)
-        if (par[i])
-            cout << (NonTerminal)i << endl;
-
-    for (auto& x : lexer(contents))
-        cout << x << endl;
+    {
+        cout << (NonTerminal)i << " -> ";
+        for (int j = 0; j < par[i].size(); ++j)
+            if (par[i][j])
+                cout << (Terminal)j << " ";
+        cout << endl;
+    }
 }

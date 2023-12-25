@@ -30,28 +30,43 @@ public:
 template <typename T, typename U>
 constexpr bool operator==(const std::variant<T, U>& lhs, const T& rhs)
 {
-	return std::holds_alternative<T>(lhs) && std::get<T>(lhs) == rhs;
+    return std::holds_alternative<T>(lhs) && std::get<T>(lhs) == rhs;
 }
 
 template <typename T, typename U>
 constexpr bool operator==(const std::variant<T, U>& lhs, const U& rhs)
 {
-	return std::holds_alternative<U>(lhs) && std::get<U>(lhs) == rhs;
+    return std::holds_alternative<U>(lhs) && std::get<U>(lhs) == rhs;
+}
+
+template <typename T, typename U>
+constexpr bool operator!=(const std::variant<T, U>& lhs, const T& rhs)
+{
+    return !(lhs == rhs);
+}
+
+template <typename T, typename U>
+constexpr bool operator!=(const std::variant<T, U>& lhs, const U& rhs)
+{
+    return !(lhs == rhs);
 }
 
 template <is_non_terminal NonTerminal, is_terminal Terminal>
 consteval auto get_nullable_set(auto production_callback)
 {
-	// Returns an array of size num_non_terminals, where ith index=true means (Nonterminal)i is nullable
-	using SET_TYPE = std::bitset<get_size<NonTerminal>()>;
-	SET_TYPE nullable_set;
-	nullable_set.reset();
-	nullable_set.set((int)NonTerminal::eps);
+    constexpr auto& productions = production_callback();
 
-	constexpr auto& productions = production_callback();
-	while (true)
-	{
-		auto new_nullable = SET_TYPE{};
+	// Returns an array of size num_non_terminals, where ith index=true means (Nonterminal)i is nullable
+	std::bitset<get_size<NonTerminal>()> nullable_set;
+	nullable_set.reset();
+
+    // T -> eps means T is nullable
+    for (auto& x : productions)
+        if (x.size == 1 && x.production[0] == Terminal::eps)
+			nullable_set[(int)x.start] = true;
+
+    // Go till convergence
+	for (bool changed = true; std::exchange(changed, false); )
 		for (auto &x: productions
 			| std::views::filter([&](auto& x) { return !nullable_set[(int)x.start]; })
 			| std::views::filter([&](auto& x) { return std::ranges::none_of(
@@ -61,22 +76,67 @@ consteval auto get_nullable_set(auto production_callback)
 					{ return std::holds_alternative<Terminal>(y) || !nullable_set[(int)std::get<NonTerminal>(y)]; }),
 				std::identity()); })
 			)
-			new_nullable.set((int)x.start);
-
-		if (new_nullable == SET_TYPE{})
-			break;
-
-		nullable_set |= new_nullable;
-	}
+			changed = nullable_set[(int)x.start] = true;
 
 	return nullable_set;
 }
 
-export consteval auto build_parser(auto production_callback)
+template <is_non_terminal NonTerminal, is_terminal Terminal>
+consteval auto get_first_sets(auto production_callback, const auto& nullable_set)
+{
+    constexpr auto& productions = production_callback();
+    constexpr auto num_terminals = get_size<Terminal>();
+    constexpr auto num_non_terminals = get_size<NonTerminal>();
+    constexpr auto num_symbols = num_terminals + num_non_terminals;
+
+    std::array<std::bitset<num_terminals>, num_non_terminals> first_set{};
+
+    // Add eps to first set of nullables
+    for (int i = 0; i < num_non_terminals; ++i)
+        if (nullable_set[i])
+            first_set[i][(int)Terminal::eps] = true;
+
+    // Iterate untill no update
+    for (bool updated = true; std::exchange(updated, false); )
+        for (const auto& x : productions)
+        {
+            auto& bits = first_set[(int)x.start];
+            auto copy = bits;
+
+            for (auto y : x.production | std::views::take(x.size))
+            {
+                if (std::holds_alternative<Terminal>(y) && y != Terminal::eps)
+                {
+                    bits[(int)std::get<Terminal>(y)] = true;
+                    break;
+                }
+                
+                if (y == Terminal::eps)
+                {
+                    bits[(int)std::get<Terminal>(y)] = true;
+                    continue;
+                }
+
+                int index = (int)std::get<NonTerminal>(y);
+                bits |= first_set[index];
+
+                if (!nullable_set[index])
+					break;
+            }
+
+            updated = updated || (copy != bits);
+        }
+
+    return first_set;
+}
+
+export constexpr auto build_parser(auto production_callback)
 {
 	constexpr auto productions = production_callback();
 	using Terminal = std::remove_cvref_t<decltype(productions[0])>::TType;
 	using NonTerminal = std::remove_cvref_t<decltype(productions[0])>::NTType;
 
-	return get_nullable_set<NonTerminal, Terminal>([]() -> auto& {return productions; });
+	constexpr auto nullable_set = get_nullable_set<NonTerminal, Terminal>([]() -> auto& { return productions; });
+    constexpr auto first_set = get_first_sets<NonTerminal, Terminal>([]() -> auto& { return productions; }, nullable_set);
+    return first_set;
 }

@@ -246,7 +246,7 @@ static consteval auto get_lexer()
     return build_lexer<LexerToken>(transitions, final_states, keywords);
 }
 
-static constexpr auto get_parser()
+static consteval auto get_parser()
 {
     using enum NonTerminal;
     using enum Terminal;

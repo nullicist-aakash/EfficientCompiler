@@ -130,7 +130,65 @@ consteval auto get_first_sets(auto production_callback, const auto& nullable_set
     return first_set;
 }
 
-export constexpr auto build_parser(auto production_callback)
+template <is_non_terminal NonTerminal, is_terminal Terminal>
+consteval auto get_follow_sets(auto production_callback, const auto& nullable_set, const auto& first_set)
+{
+	constexpr auto& productions = production_callback();
+	constexpr auto num_terminals = get_size<Terminal>();
+	constexpr auto num_non_terminals = get_size<NonTerminal>();
+	constexpr auto num_symbols = num_terminals + num_non_terminals;
+
+	std::array<std::bitset<num_terminals>, num_non_terminals> follow_set{};
+
+    for (bool updated = true; std::exchange(updated, false); )
+        for (auto& x : productions)
+        {
+            for (int j = 0; j < x.size; ++j)
+            {
+                if (std::holds_alternative<Terminal>(x.production[j]))
+                    continue;
+
+                auto& symbol = x.production[j];
+                auto& bits = follow_set[(int)std::get<NonTerminal>(symbol)];
+                auto copy = bits;
+
+                for (int k = j + 1; k < x.size; ++k)
+                {
+                    auto& follow_symbol = x.production[k];
+                    if (std::holds_alternative<Terminal>(follow_symbol))
+                    {
+                        bits[(int)std::get<Terminal>(follow_symbol)] = true;
+
+                        if (follow_symbol != Terminal::eps)
+							break;
+                    }
+                    else
+                    {
+                        bits |= first_set[(int)std::get<NonTerminal>(follow_symbol)];
+
+                        if (!nullable_set.test((int)std::get<NonTerminal>(follow_symbol)))
+                            break;
+                    }
+
+                    if (k == x.size - 1)
+                        bits |= follow_set[(int)x.start];
+                }
+
+                if (j == x.size - 1)
+                    bits |= follow_set[(int)x.start];
+
+                updated = updated || (copy != bits);
+            }
+        }
+
+    // remove eps from follow set
+    for (auto& follow : follow_set)
+        follow[(int)Terminal::eps] = false;
+
+	return follow_set;
+}
+
+export consteval auto build_parser(auto production_callback)
 {
 	constexpr auto productions = production_callback();
 	using Terminal = std::remove_cvref_t<decltype(productions[0])>::TType;
@@ -138,5 +196,5 @@ export constexpr auto build_parser(auto production_callback)
 
 	constexpr auto nullable_set = get_nullable_set<NonTerminal, Terminal>([]() -> auto& { return productions; });
     constexpr auto first_set = get_first_sets<NonTerminal, Terminal>([]() -> auto& { return productions; }, nullable_set);
-    return first_set;
+    return get_follow_sets<NonTerminal, Terminal>([]() -> auto& { return productions; }, nullable_set, first_set);
 }

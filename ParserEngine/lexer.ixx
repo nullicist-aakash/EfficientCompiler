@@ -78,7 +78,7 @@ public:
     constexpr bool operator!=(sentinel) const 
     {
         using TerminalType = std::variant_alternative_t<0, TokenType>;
-        auto errType = std::get_if<LexerErrorToken>(&token.type);
+        auto errType = std::get_if<TerminalType>(&token.type);
 
         return !errType || *errType != TerminalType::TK_EOF;
     }

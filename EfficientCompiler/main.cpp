@@ -12,6 +12,7 @@ import helpers.reflection;
 using std::string_view;
 using std::array;
 
+#include <set>
 #include <numeric>
 #include <fstream>
 #include <iostream>
@@ -246,7 +247,7 @@ static consteval auto get_lexer()
     return build_lexer<LexerToken>(transitions, final_states, keywords);
 }
 
-static consteval auto get_parser()
+static consteval auto get_parser(const auto& lexer)
 {
     using enum NonTerminal;
     using enum Terminal;
@@ -332,7 +333,7 @@ static consteval auto get_parser()
         PI(expression_list, { eps }),
         PI(more_expressions, { COMMA, expression, more_expressions }),
         PI(more_expressions, { eps }),
-    }; });
+    }; }, lexer.keyword_to_token);
 }
 
 static auto read_file(string_view filename)
@@ -346,15 +347,21 @@ static auto read_file(string_view filename)
 int main()
 {
     constexpr auto lexer = get_lexer();
+    constexpr auto par = get_parser(lexer);
     auto contents = read_file("source.jack");
 
-    auto par = get_parser();
-    for (int i = 0; i < par.size(); ++i)
+    for (int i = 0; i < par.parse_table.size(); ++i)
     {
-        cout << (NonTerminal)i << " -> ";
-        for (int j = 0; j < par[i].size(); ++j)
-            if (par[i][j])
-                cout << (Terminal)j << " ";
+        cout << (NonTerminal)i << " :: ";
+
+        for (int j = 0; j < par.parse_table[i].size(); ++j)
+		{
+            if (par.parse_table[i][j] == -1)
+                continue;
+			
+            cout << (Terminal)j << "(" << par.parse_table[i][j] << ") ";
+		}
+
         cout << endl;
     }
 }

@@ -16,15 +16,19 @@ import <algorithm>;
 import <bitset>;
 import <functional>;
 import <utility>;
+import <exception>;
 
-template <is_non_terminal NonTerminal, is_terminal Terminal>
+template <is_non_terminal NonTerminal, is_terminal Terminal, int max_prod_len, int num_productions>
 struct Parser
 {
+private:
+    using ProductionNumber = int;
 	static constexpr auto num_terminals = get_size<Terminal>();
 	static constexpr auto num_non_terminals = get_size<NonTerminal>();
 	static constexpr auto num_symbols = num_terminals + num_non_terminals;
 public:
-	std::array<std::array<int, num_terminals>, num_symbols> parseTable;
+    std::array<ProductionInfo<NonTerminal, Terminal, max_prod_len>, num_productions> productions{};
+    std::array<std::array<ProductionNumber, num_terminals>, num_non_terminals> parse_table{};
 };
 
 template <typename T, typename U>
@@ -188,13 +192,99 @@ consteval auto get_follow_sets(auto production_callback, const auto& nullable_se
 	return follow_set;
 }
 
-export consteval auto build_parser(auto production_callback)
+export consteval auto build_parser(auto production_callback, const auto& keyword_to_token_map)
 {
 	constexpr auto productions = production_callback();
-	using Terminal = std::remove_cvref_t<decltype(productions[0])>::TType;
-	using NonTerminal = std::remove_cvref_t<decltype(productions[0])>::NTType;
+    
+    using ProdType = std::remove_cvref_t<decltype(productions[0])>;
+	using Terminal = ProdType::TType;
+	using NonTerminal = ProdType::NTType;
+    
+    constexpr auto num_terminals = get_size<Terminal>();
+    constexpr auto num_non_terminals = get_size<NonTerminal>();
+    constexpr auto num_symbols = num_terminals + num_non_terminals;
 
 	constexpr auto nullable_set = get_nullable_set<NonTerminal, Terminal>([]() -> auto& { return productions; });
     constexpr auto first_set = get_first_sets<NonTerminal, Terminal>([]() -> auto& { return productions; }, nullable_set);
-    return get_follow_sets<NonTerminal, Terminal>([]() -> auto& { return productions; }, nullable_set, first_set);
+    constexpr auto follow_set =  get_follow_sets<NonTerminal, Terminal>([]() -> auto& { return productions; }, nullable_set, first_set);
+
+    constexpr auto test_nullable = [](const auto& x) 
+        {
+            return (std::holds_alternative<Terminal>(x) && std::get<Terminal>(x) == Terminal::eps) 
+                || (std::holds_alternative<NonTerminal>(x) && nullable_set[(int)std::get<NonTerminal>(x)]);
+        };
+    constexpr auto get_first = [](const auto& x) 
+		{
+            std::bitset<num_terminals> bits{};
+			if (std::holds_alternative<Terminal>(x))
+                bits[(int)std::get<Terminal>(x)] = true;
+			else
+				bits = first_set[(int)std::get<NonTerminal>(x)];
+            return bits;
+		};
+
+    std::array<std::bitset<num_terminals>, productions.size()> selection_sets{};
+    for (int i = 0; i < productions.size(); ++i)
+    {
+        auto& x = productions[i];
+        auto& target = selection_sets[i];
+        bool all_nullable = true;
+
+        for (auto& y : x.production | std::views::take(x.size))
+        {
+            target |= get_first(y);
+
+            if (!test_nullable(y))
+            {
+                all_nullable = false;
+                break;
+            }
+        }
+
+        if (all_nullable)
+			target |= follow_set[(int)x.start];
+
+        target[(int)Terminal::eps] = false;
+    }
+
+    Parser<NonTerminal, Terminal, productions[0].production.size(), productions.size()> parser
+    {
+        .productions = productions,
+		.parse_table = {}
+    };
+
+    for (auto& row : parser.parse_table)
+		row.fill(-1);
+
+    for (int i = 0; i < productions.size(); ++i)
+    {
+        auto lhs = productions[i].start;
+        for (int token = 0; token < selection_sets[i].size(); ++token)
+        {
+            if (!selection_sets[i][token])
+                continue;
+
+            if (parser.parse_table[(int)lhs][(int)token] != -1)
+                throw "Grammar is not LL(1). There is collison inside production table.";
+
+            parser.parse_table[(int)lhs][token] = i;
+        }
+    }
+
+    // Fill for sync set: If j is in FOLLOW(i) and (i,j) is -1, then (i,j) = -2
+    for (int i = 0; i < num_non_terminals; ++i)
+	{
+        for (int j = 0; j < num_terminals; ++j)
+        {
+            if (parser.parse_table[i][j] == -1 && follow_set[i][j])
+				parser.parse_table[i][j] = -2;
+        }
+	}
+
+    for (auto& [_, keyword_token] : keyword_to_token_map)
+        for (int i = 0; i < parser.parse_table.size(); ++i)
+            if (auto& ref = parser.parse_table[i][(int)keyword_token]; ref == -1)
+                ref = -2;
+
+    return parser;
 }

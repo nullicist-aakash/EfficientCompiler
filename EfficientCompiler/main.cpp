@@ -247,7 +247,7 @@ static constexpr auto get_parser()
     using enum NonTerminal;
     using enum Terminal;
     using PI = ProductionInfo<NonTerminal, Terminal, 30>;
-    return build_parser<NonTerminal, Terminal>([]() { return array {
+    return build_parser([]() { return array {
         PI(start, { _class }),
         PI(_class, { CLASS, IDENTIFIER, CURO, class_vars, subroutineDecs, CURC }),
         PI(class_vars, { class_var, class_vars }),

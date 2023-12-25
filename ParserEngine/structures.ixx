@@ -75,11 +75,14 @@ struct KeywordInfo
 export template <is_non_terminal NonTerminalType, is_terminal TerminalType, int max_prod_len=30>
 struct ProductionInfo
 {
+    using TType = TerminalType;
+    using NTType = NonTerminalType;
+
     NonTerminalType start;
-    std::array<std::variant<TerminalType, NonTerminalType>, max_prod_len> production;
+    std::array<std::variant<NonTerminalType, TerminalType>, max_prod_len> production;
     std::size_t size;
 
-    constexpr ProductionInfo(NonTerminalType start, const std::vector<std::variant<TerminalType, NonTerminalType>>& production)
+    constexpr ProductionInfo(NonTerminalType start, const std::vector<std::variant<NonTerminalType, TerminalType>>& production)
         : start(start), size(production.size())
     {
         for (std::size_t i = 0; i < production.size(); ++i)

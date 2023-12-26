@@ -51,7 +51,7 @@ consteval auto get_enum_array()
     }
 }
 
-template <typename T> requires std::is_enum_v<T>
+export template <typename T> requires std::is_enum_v<T>
 constexpr std::string_view get_token_string(T token)
 {
     static auto mapping = get_enum_array<T>();

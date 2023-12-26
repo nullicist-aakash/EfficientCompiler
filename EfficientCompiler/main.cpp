@@ -347,20 +347,21 @@ static auto read_file(string_view filename)
 int main()
 {
     constexpr auto lexer = get_lexer();
-    constexpr auto par = get_parser(lexer);
     auto contents = read_file("source.jack");
+
+    auto par = get_parser(lexer);
 
     for (int i = 0; i < par.parse_table.size(); ++i)
     {
         cout << (NonTerminal)i << " :: ";
 
         for (int j = 0; j < par.parse_table[i].size(); ++j)
-		{
+        {
             if (par.parse_table[i][j] == -1)
                 continue;
-			
+
             cout << (Terminal)j << "(" << par.parse_table[i][j] << ") ";
-		}
+        }
 
         cout << endl;
     }

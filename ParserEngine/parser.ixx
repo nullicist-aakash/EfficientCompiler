@@ -17,6 +17,7 @@ import <bitset>;
 import <functional>;
 import <utility>;
 import <exception>;
+import <format>;
 
 template <is_non_terminal NonTerminal, is_terminal Terminal, int max_prod_len, int num_productions>
 struct Parser
@@ -264,8 +265,8 @@ export consteval auto build_parser(auto production_callback, const auto& keyword
             if (!selection_sets[i][token])
                 continue;
 
-            if (parser.parse_table[(int)lhs][(int)token] != -1)
-                throw "Grammar is not LL(1). There is collison inside production table.";
+            if (parser.parse_table[(int)lhs][token] != -1)
+                throw std::format("There is a problem for '{}' with the terminal '{}'.", get_token_string(lhs), get_token_string((Terminal)token));
 
             parser.parse_table[(int)lhs][token] = i;
         }

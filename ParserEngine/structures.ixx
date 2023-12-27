@@ -50,15 +50,6 @@ enum class LexerErrorToken
     ERR_PATTERN
 };
 
-export template<is_terminal TT, is_lexer_token LT>
-struct UserLexerTypes
-{
-    using ETerminal = TT;
-    using ELexerError = LexerErrorToken;
-
-    using LexerToken = LT;
-};
-
 export template <typename T>
 concept user_lexer_types_t = requires(T t)
 {
@@ -131,42 +122,4 @@ struct ProductionInfo
         for (std::size_t i = 0; i < production.size(); ++i)
 			this->production[i] = production[i];
 	}
-};
-
-export template<is_terminal TT, is_non_terminal NTT, is_lexer_token LT>
-struct EngineTypes
-{
-    using TerminalType = TT;
-    using NonTerminalType = NTT;
-    using SymbolType = std::variant<TerminalType, NonTerminalType>;
-
-    using TransitionInfo = TransitionInfo;
-    using FinalStateInfo = FinalStateInfo<TerminalType>;
-    using KeywordInfo = KeywordInfo<TerminalType>;
-
-    using LexerErrorToken = LexerErrorToken;
-    using LexerTokenType = LT;
-
-    using ProductionInfo = ProductionInfo<NonTerminalType, TerminalType>;
-    using ParseTreeNode = ParseTreeNode<LexerTokenType, NonTerminalType>;
-    using ASTNode = ASTNode<LexerTokenType, NonTerminalType>;
-};
-
-export template <typename T>
-concept engine_types_t = requires(T t)
-{
-    {T::TerminalType};
-    {T::NonTerminalType};
-    {T::SymbolType};
-
-    {T::TransitionInfo};
-    {T::FinalStateInfo};
-    {T::KeywordInfo};
-
-    {T::LexerErrorToken};
-    {T::LexerTokenType};
-
-    {T::ProductionInfo};
-    {T::ParseTreeNode};
-    {T::ASTNode};
 };

@@ -9,7 +9,7 @@ import <variant>;
 enum class ELexerError;
 
 // Concepts
-template<typename T>
+export template<typename T>
 concept CETerminal = requires(T t)
 {
     requires std::is_enum_v<T>;
@@ -25,7 +25,7 @@ concept CELexerSymbol = requires(T t)
     requires std::is_same_v<ELexerError, std::variant_alternative_t<1, T>>;
 };
 
-template <typename T>
+export template <typename T>
 concept CLexerToken = requires(T t, const T & u)
 {
     requires CELexerSymbol<decltype(T::type)>;
@@ -43,14 +43,14 @@ concept CLexerTypes = requires()
 };
 
 // Type Definitions
-enum class ELexerError
+export enum class ELexerError
 {
     UNINITIALISED,
     ERR_SYMBOL,
     ERR_PATTERN
 };
 
-template <CLexerToken LT>
+export template <CLexerToken LT>
 struct LexerTypes
 {
     using ELexerSymbol = decltype(LT::type);
@@ -59,7 +59,7 @@ struct LexerTypes
     using ILexerToken = LT;
 };
 
-struct TransitionInfo
+export struct TransitionInfo
 {
     int from{};
     int to{};
@@ -67,24 +67,16 @@ struct TransitionInfo
     int default_transition_state{ -1 };
 };
 
-template <CETerminal ETerminal>
+export template <CETerminal ETerminal>
 struct FinalStateInfo
 {
     int state_no;
     ETerminal token_type;
 };
 
-template <CETerminal ETerminal>
+export template <CETerminal ETerminal>
 struct KeywordInfo
 {
     std::string_view keyword;
     ETerminal token_type;
 };
-
-
-// Struct Exports
-export enum class ELexerError;
-export template <CLexerToken LT> struct LexerTypes;
-export struct TransitionInfo;
-export template <CETerminal ETerminal> struct FinalStateInfo;
-export template <CETerminal ETerminal> struct KeywordInfo;

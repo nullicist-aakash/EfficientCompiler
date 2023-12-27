@@ -349,7 +349,7 @@ int main()
     constexpr auto lexer = get_lexer();
     auto contents = read_file("source.jack");
 
-    auto par = get_parser(lexer);
+    constexpr auto par = get_parser(lexer);
 
     for (int i = 0; i < par.parse_table.size(); ++i)
     {

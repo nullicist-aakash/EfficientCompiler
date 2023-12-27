@@ -33,25 +33,25 @@ public:
 };
 
 template <typename T, typename U>
-constexpr bool operator==(const std::variant<T, U>& lhs, const T& rhs)
+consteval bool operator==(const std::variant<T, U>& lhs, const T& rhs)
 {
     return std::holds_alternative<T>(lhs) && std::get<T>(lhs) == rhs;
 }
 
 template <typename T, typename U>
-constexpr bool operator==(const std::variant<T, U>& lhs, const U& rhs)
+consteval bool operator==(const std::variant<T, U>& lhs, const U& rhs)
 {
     return std::holds_alternative<U>(lhs) && std::get<U>(lhs) == rhs;
 }
 
 template <typename T, typename U>
-constexpr bool operator!=(const std::variant<T, U>& lhs, const T& rhs)
+consteval bool operator!=(const std::variant<T, U>& lhs, const T& rhs)
 {
     return !(lhs == rhs);
 }
 
 template <typename T, typename U>
-constexpr bool operator!=(const std::variant<T, U>& lhs, const U& rhs)
+consteval bool operator!=(const std::variant<T, U>& lhs, const U& rhs)
 {
     return !(lhs == rhs);
 }

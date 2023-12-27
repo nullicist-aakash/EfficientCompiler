@@ -3,7 +3,20 @@
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)lexer.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)dfa.ixx" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)structures.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)parser.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)structures.ixx">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)lexer_structures.ixx">
+      <Filter>Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)parser_structures.ixx">
+      <Filter>Structures</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Structures">
+      <UniqueIdentifier>{b427dde8-66ae-4621-92eb-6559b7f12cb9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

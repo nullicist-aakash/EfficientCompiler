@@ -50,6 +50,23 @@ enum class LexerErrorToken
     ERR_PATTERN
 };
 
+export template<is_terminal TT, is_lexer_token LT>
+struct UserLexerTypes
+{
+    using ETerminal = TT;
+    using ELexerError = LexerErrorToken;
+
+    using LexerToken = LT;
+};
+
+export template <typename T>
+concept user_lexer_types_t = requires(T t)
+{
+	{T::ETerminal};
+	{T::ELexerError};
+	{T::LexerToken};
+};
+
 export struct TransitionInfo
 {
     int from{};

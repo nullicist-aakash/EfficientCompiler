@@ -41,15 +41,14 @@ class LexerStringWrapper
         {
             auto tk = lexer_string.dfa.get_next_token<ILexerToken>(lexer_string.source_code, cur_position);
 
-            auto errType = std::get_if<ELexerError>(&tk.type);
-            auto usrType = std::get_if<ETerminal>(&tk.type);
-
-            if (!errType)
+            if (!std::get_if<ELexerError>(&tk.type))
                 cur_position += tk.lexeme.size();
-            else if (*errType == ELexerError::ERR_SYMBOL || *errType == ELexerError::ERR_PATTERN)
+            else if (tk.type == ELexerError::ERR_SYMBOL || tk.type == ELexerError::ERR_PATTERN)
                 cur_position += 1;
+            else
+                throw "Guddi pakdo developer ki";
 
-            if (usrType && *usrType == ETerminal::IDENTIFIER && lexer_string.keyword_to_token.exists(tk.lexeme))
+            if (tk.type == ETerminal::IDENTIFIER && lexer_string.keyword_to_token.exists(tk.lexeme))
                 tk.type = lexer_string.keyword_to_token.at(tk.lexeme);
 
             tk.after_construction(token);

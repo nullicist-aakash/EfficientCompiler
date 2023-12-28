@@ -339,6 +339,8 @@ int main()
     constexpr auto lexer = get_lexer();
     auto contents = read_file("source.jack");
 
+    cout << lexer << endl;
+
     for (auto x: lexer(contents))
 		cout << x << endl;
 }

@@ -57,7 +57,7 @@ struct DFA
             if (next_dfa_state == -1)
                 break;
 
-            if (std::get_if<ETerminal>(&final_states[next_dfa_state]))
+            if (std::holds_alternative<ETerminal>(final_states[next_dfa_state]))
             {
                 status.final_dfa_state = next_dfa_state;
                 status.final_state_code_pos = status.cur_code_position;
@@ -203,8 +203,7 @@ constexpr T& operator<<(T& out, const DFA<ELexerSymbol, num_states>& dfa)
 
     out << "\nFinal States :\n";
     for (int i = 0; i < num_states; ++i)
-        if (auto usrType = std::get_if<ETerminal>(&dfa.final_states[i]); usrType)
-            out << i << ": " << *usrType << '\n';
+        out << i << ": " << dfa.final_states[i] << '\n';
 
     return out;
 }

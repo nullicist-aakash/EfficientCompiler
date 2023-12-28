@@ -3,11 +3,11 @@ export module compiler.lexer:dfa;
 import :structures;
 import helpers.checks;
 import <array>;
-import <string_view>;
 import <limits>;
+import <string_view>;
+import <type_traits>;
 import <variant>;
 import <vector>;
-import <type_traits>;
 
 export template <CELexerSymbol ELexerSymbol, int num_states>
 struct DFA

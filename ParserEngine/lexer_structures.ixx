@@ -1,8 +1,8 @@
 export module compiler.lexer:structures;
 
-import <type_traits>;
 import <concepts>;
 import <string_view>;
+import <type_traits>;
 import <variant>;
 
 // Forward Declarations

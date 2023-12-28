@@ -1,19 +1,18 @@
-import <string_view>;
+import <algorithm>;
 import <array>;
+import <string_view>;
 import <vector>;
 import <variant>;
-import <algorithm>;
+
 import compiler;
 import helpers.extensions;
 
-using std::string_view;
-using std::array;
-
-#include <set>
-#include <numeric>
 #include <fstream>
 #include <iostream>
+#include <numeric>
+#include <set>
 #include <sstream>
+
 using namespace std;
 
 enum class Terminal
@@ -120,7 +119,7 @@ struct LexerToken
 
     constexpr bool discard() const
     {
-        return type == ELexerError::UNINITIALISED || type == Terminal::WHITESPACE || type == Terminal::COMMENT;
+        return true; // type == ELexerError::UNINITIALISED || type == Terminal::WHITESPACE || type == Terminal::COMMENT;
     }
 };
 

@@ -4,10 +4,10 @@ import :dfa;
 import :structures;
 import helpers.flatmap;
 
+import <algorithm>;
+import <numeric>;
 import <string_view>;
 import <variant>;
-import <numeric>;
-import <algorithm>;
 
 template <CLexerTypes LexerTypes, int num_states, int num_keywords>
 struct Lexer;
@@ -62,7 +62,7 @@ class LexerStringWrapper
             do
             {
                 token = get_token_from_dfa();
-            } while (token.discard());
+            } while (token.discard() && token.type != ETerminal::TK_EOF);
         }
         constexpr bool operator!=(sentinel) const
         {
@@ -73,7 +73,7 @@ class LexerStringWrapper
             do
             {
                 token = get_token_from_dfa();
-            } while (token.discard());
+            } while (token.discard() && token.type != ETerminal::TK_EOF);
 
             return *this;
         }

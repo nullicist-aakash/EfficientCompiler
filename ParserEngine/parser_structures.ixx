@@ -1,16 +1,13 @@
 export module compiler.parser:structures;
 
 import compiler.lexer;
-import <type_traits>;
-import <concepts>;
-import <string_view>;
-import <variant>;
 import <array>;
+import <concepts>;
 import <memory>;
+import <string_view>;
+import <type_traits>;
+import <variant>;
 import <vector>;
-
-// Forward declarations
-
 
 // Concepts
 export template<typename T>

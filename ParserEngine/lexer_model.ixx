@@ -9,9 +9,6 @@ import <variant>;
 import <numeric>;
 import <algorithm>;
 
-
-struct sentinel {};
-
 template <CLexerTypes LexerTypes, int num_states, int num_keywords>
 struct Lexer;
 
@@ -33,7 +30,8 @@ class LexerStringWrapper
     const flatmap<std::string_view, ETerminal, num_keywords>& keyword_to_token{};
     const std::string_view source_code{};
 
-    class iterator
+    struct sentinel {};
+    class Iterator
     {
         const LexerStringWrapper& lexer_string;
         ILexerToken token;
@@ -60,15 +58,13 @@ class LexerStringWrapper
         }
 
     public:
-        constexpr iterator(const LexerStringWrapper& lsw) : lexer_string{ lsw }, cur_position{ 0 }
+        constexpr Iterator(const LexerStringWrapper& lsw) : lexer_string{ lsw }, cur_position{ 0 }
         {
             token = get_token_from_dfa();
         }
         constexpr bool operator!=(sentinel) const
         {
-            auto terminalType = std::get_if<ETerminal>(&token.type);
-
-            return !terminalType || *terminalType != ETerminal::TK_EOF;
+            return token.type != ETerminal::TK_EOF;
         }
         constexpr const auto& operator++() { token = get_token_from_dfa(); return *this; }
         constexpr const auto& operator*() const
@@ -86,7 +82,7 @@ public:
 
     constexpr auto begin() const
     {
-        return iterator(*this);
+        return Iterator(*this);
     }
 
     constexpr auto end() const

@@ -16,8 +16,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)checks.ixx" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)reflection.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)reflection.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)extensions.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)extensions.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)flatmap.ixx" />
   </ItemGroup>
 </Project>

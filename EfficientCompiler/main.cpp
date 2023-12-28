@@ -5,7 +5,7 @@ import <variant>;
 import <algorithm>;
 import compiler_engine.models;
 import compiler_engine.structures;
-import helpers.reflection;
+import helpers.extensions;
 
 using std::string_view;
 using std::array;
@@ -119,14 +119,6 @@ struct LexerToken
             (int)std::count(previous_token.lexeme.begin(), previous_token.lexeme.end(), '\n');
     }
 };
-
-template <typename T, typename U, typename V>
-constexpr T& operator<<(T& out, const std::variant<U, V>& vr)
-{
-    if (holds_alternative<U>(vr))
-        return out << get<U>(vr);
-    return out << get<V>(vr);
-}
 
 template <typename T>
 constexpr T& operator<<(T& out, const LexerToken& tk)

@@ -43,7 +43,7 @@ concept CLexerTypes = requires()
 };
 
 // Type Definitions
-export enum class ELexerError
+enum class ELexerError
 {
     UNINITIALISED,
     ERR_SYMBOL,

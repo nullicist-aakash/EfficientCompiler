@@ -16,8 +16,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)dfa.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)dfa_model.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)lexer.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)lexer_structures.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)models.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)parser.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)parser_structures.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)structures.ixx" />

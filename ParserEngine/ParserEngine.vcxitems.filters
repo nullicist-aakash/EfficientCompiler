@@ -13,10 +13,19 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)parser_structures.ixx">
       <Filter>Structures</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)models.ixx">
+      <Filter>Models</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)dfa_model.ixx">
+      <Filter>Models</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Structures">
       <UniqueIdentifier>{b427dde8-66ae-4621-92eb-6559b7f12cb9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Models">
+      <UniqueIdentifier>{bdb63d73-1e36-42a8-9b4b-71d393414ea8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -3,8 +3,7 @@ import <array>;
 import <vector>;
 import <variant>;
 import <algorithm>;
-import compiler_engine.models;
-import compiler_engine.structures;
+import compiler;
 import helpers.extensions;
 
 using std::string_view;
@@ -117,6 +116,11 @@ struct LexerToken
     {
         line_num = previous_token.line_num + 
             (int)std::count(previous_token.lexeme.begin(), previous_token.lexeme.end(), '\n');
+    }
+
+    constexpr bool discard() const
+    {
+        return type == ELexerError::UNINITIALISED || type == Terminal::WHITESPACE || type == Terminal::COMMENT;
     }
 };
 

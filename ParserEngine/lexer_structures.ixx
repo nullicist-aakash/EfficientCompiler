@@ -1,4 +1,4 @@
-export module compiler_engine.structures:lexer;
+export module compiler.lexer:structures;
 
 import <type_traits>;
 import <concepts>;
@@ -31,6 +31,7 @@ concept CLexerToken = requires(T t, const T & u)
     requires CELexerSymbol<decltype(T::type)>;
     { t.lexeme } -> std::convertible_to<std::string_view>;
     { t.after_construction(u) } -> std::same_as<void>;
+    { t.discard() } -> std::same_as<bool>;
 };
 
 export template <typename T>

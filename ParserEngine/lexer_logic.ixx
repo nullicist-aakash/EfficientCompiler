@@ -1,7 +1,7 @@
-export module compiler_engine.models:lexer;
+export module compiler.lexer:lexer;
 
-import compiler_engine.structures;
 import :dfa;
+import :structures;
 import helpers.flatmap;
 
 import <string_view>;
@@ -59,13 +59,24 @@ class LexerStringWrapper
     public:
         constexpr Iterator(const LexerStringWrapper& lsw) : lexer_string{ lsw }, cur_position{ 0 }
         {
-            token = get_token_from_dfa();
+            do
+            {
+                token = get_token_from_dfa();
+            } while (token.discard());
         }
         constexpr bool operator!=(sentinel) const
         {
             return token.type != ETerminal::TK_EOF;
         }
-        constexpr const auto& operator++() { token = get_token_from_dfa(); return *this; }
+        constexpr const auto& operator++() 
+        {
+            do
+            {
+                token = get_token_from_dfa();
+            } while (token.discard());
+
+            return *this;
+        }
         constexpr const auto& operator*() const
         {
             return token;

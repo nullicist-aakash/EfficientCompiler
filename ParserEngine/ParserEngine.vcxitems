@@ -15,12 +15,12 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)dfa_model.ixx" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)lexer_model.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)compiler.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)dfa_logic.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)lexer.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)lexer_logic.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)lexer_structures.ixx" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)models.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)parser.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)parser_structures.ixx" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)structures.ixx" />
   </ItemGroup>
 </Project>

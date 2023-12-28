@@ -1,6 +1,6 @@
-export module compiler_engine.models:dfa;
+export module compiler.lexer:dfa;
 
-import compiler_engine.structures;
+import :structures;
 import helpers.checks;
 import <array>;
 import <string_view>;
@@ -17,12 +17,12 @@ struct DFA
 
     static const int state_count = num_states;
 
-    std::array<std::array<int, 128>, num_states> productions;
+    std::array<std::array<int, 128>, num_states> transitions;
     std::array<ELexerSymbol, num_states> final_states;
 
     constexpr DFA()
     {
-        for (auto& x : productions)
+        for (auto& x : transitions)
             x.fill(-1);
 
         for (auto& x : final_states)
@@ -52,7 +52,7 @@ struct DFA
         while (status.cur_code_position < input.size())
         {
             auto cur_symbol = input[status.cur_code_position];
-            auto next_dfa_state = productions[status.cur_dfa_state][cur_symbol];
+            auto next_dfa_state = transitions[status.cur_dfa_state][cur_symbol];
 
             if (next_dfa_state == -1)
                 break;
@@ -192,12 +192,12 @@ constexpr T& operator<<(T& out, const DFA<ELexerSymbol, num_states>& dfa)
     using ETerminal = std::variant_alternative_t<0, ELexerSymbol>;
     using ELexerError = std::variant_alternative_t<1, ELexerSymbol>;
 
-    out << "Productions: \n";
+    out << "Transitions: \n";
     for (int i = 0; i < num_states; ++i)
     {
         out << i << ": ";
         for (int j = 0; j < 128; ++j)
-            out << dfa.productions[i][j] << " ";
+            out << dfa.transitions[i][j] << " ";
         out << '\n';
     }
 
@@ -234,7 +234,7 @@ consteval auto build_dfa(auto transition_callback, auto final_states_callback)
         if (def == -1)
             continue;
 
-        for (auto& x : dfa.productions[fr])
+        for (auto& x : dfa.transitions[fr])
             x = def;
     }
 
@@ -245,8 +245,16 @@ consteval auto build_dfa(auto transition_callback, auto final_states_callback)
         int def = t.default_transition_state;
 
         for (auto c : t.pattern)
-            dfa.productions[fr][c] = to;
+            dfa.transitions[fr][c] = to;
     }
+
+    for (auto& t : dfa.transitions)
+        for (auto invalid_symbol : { 
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 
+            11, 12, 14, 15, 16, 17, 18,
+            19, 20, 21, 22, 23, 24, 25,
+            26, 27, 28, 29, 30, 31, 127 })
+			t[invalid_symbol] = -1;
 
     for (auto& f : final_states)
         dfa.final_states[f.state_no] = f.token_type;

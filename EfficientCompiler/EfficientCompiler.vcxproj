@@ -137,6 +137,12 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Update="C:\Users\Aakash\source\repos\EfficientCompiler\ParserEngine\dfa_logic.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Update="C:\Users\Aakash\source\repos\EfficientCompiler\ParserEngine\lexer_logic.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClCompile Update="C:\Users\Aakash\source\repos\EfficientCompiler\Reflection\checks.ixx">
       <FileType>Document</FileType>
     </ClCompile>

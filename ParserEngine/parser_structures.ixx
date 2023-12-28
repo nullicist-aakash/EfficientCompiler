@@ -1,6 +1,6 @@
-export module compiler_engine.structures:parser;
+export module compiler.parser:structures;
 
-import :lexer;
+import compiler.lexer;
 import <type_traits>;
 import <concepts>;
 import <string_view>;

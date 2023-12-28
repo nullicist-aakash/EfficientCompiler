@@ -1,3 +1,6 @@
+export module compiler.parser;
+
+export import :structures;
 /*export module compiler_engine.parser;
 
 import compiler_engine.lexer;

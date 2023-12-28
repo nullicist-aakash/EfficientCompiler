@@ -1,0 +1,167 @@
+export module compiler_engine.models:lexer;
+
+import compiler_engine.structures;
+import :dfa;
+import helpers.flatmap;
+
+import <string_view>;
+import <variant>;
+import <numeric>;
+import <algorithm>;
+
+
+struct sentinel {};
+
+template <CLexerTypes LexerTypes, int num_states, int num_keywords>
+struct Lexer;
+
+template <typename T>
+concept IsLexer = requires(T t)
+{
+    [] <CLexerTypes LexerTypes, int num_states, int num_keywords>(Lexer<LexerTypes, num_states, num_keywords>&) {}(t);
+};
+
+template <CLexerTypes LexerTypes, int num_states, int num_keywords>
+class LexerStringWrapper
+{
+    using ETerminal = LexerTypes::ETerminal;
+    using ELexerSymbol = LexerTypes::ELexerSymbol;
+    using ELexerError = LexerTypes::ELexerError;
+    using ILexerToken = LexerTypes::ILexerToken;
+    
+    const DFA<ELexerSymbol, num_states>& dfa{};
+    const flatmap<std::string_view, ETerminal, num_keywords>& keyword_to_token{};
+    const std::string_view source_code{};
+
+    class iterator
+    {
+        const LexerStringWrapper& lexer_string;
+        ILexerToken token;
+        std::size_t cur_position{ 0 };
+
+        constexpr auto get_token_from_dfa()
+        {
+            auto tk = lexer_string.dfa.get_next_token<ILexerToken>(lexer_string.source_code, cur_position);
+
+            auto errType = std::get_if<ELexerError>(&tk.type);
+            auto usrType = std::get_if<ETerminal>(&tk.type);
+
+            if (!errType)
+                cur_position += tk.lexeme.size();
+            else if (*errType == ELexerError::ERR_SYMBOL || *errType == ELexerError::ERR_PATTERN)
+                cur_position += 1;
+
+            if (usrType && *usrType == ETerminal::IDENTIFIER && lexer_string.keyword_to_token.exists(tk.lexeme))
+                tk.type = lexer_string.keyword_to_token.at(tk.lexeme);
+
+            tk.after_construction(token);
+
+            return tk;
+        }
+
+    public:
+        constexpr iterator(const LexerStringWrapper& lsw) : lexer_string{ lsw }, cur_position{ 0 }
+        {
+            token = get_token_from_dfa();
+        }
+        constexpr bool operator!=(sentinel) const
+        {
+            auto terminalType = std::get_if<ETerminal>(&token.type);
+
+            return !terminalType || *terminalType != ETerminal::TK_EOF;
+        }
+        constexpr const auto& operator++() { token = get_token_from_dfa(); return *this; }
+        constexpr const auto& operator*() const
+        {
+            return token;
+        }
+    };
+
+public:
+    constexpr LexerStringWrapper(const IsLexer auto& lexer, std::string_view source_code) :
+        dfa{ lexer.dfa },
+        keyword_to_token{ lexer.keyword_to_token },
+        source_code{ source_code }
+    {}
+
+    constexpr auto begin() const
+    {
+        return iterator(*this);
+    }
+
+    constexpr auto end() const
+    {
+        return sentinel{};
+    }
+};
+
+template <CLexerTypes LexerTypes, int num_states, int num_keywords>
+struct Lexer
+{
+    using ETerminal = LexerTypes::ETerminal;
+    using ELexerSymbol = LexerTypes::ELexerSymbol;
+     
+    const DFA<ELexerSymbol, num_states> dfa;
+    const flatmap<std::string_view, ETerminal, num_keywords> keyword_to_token;
+
+    constexpr auto operator()(std::string_view source_code) const
+    {
+        return LexerStringWrapper<LexerTypes, num_states, num_keywords>(*this, source_code);
+    }
+};
+
+export template <typename T>
+constexpr T& operator<<(T& out, const IsLexer auto& lexer)
+{
+    out << lexer.dfa << "\nKeywords:\n";
+    for (const auto& [k, v] : lexer.keyword_to_token)
+        out << k << ": " << v << '\n';
+
+    return out;
+}
+
+template <CETerminal ETerminal, int num_keywords>
+consteval auto get_keywords_map(const auto& keywords)
+{
+    flatmap<std::string_view, ETerminal, num_keywords> keyword_to_token{};
+    for (auto& k : keywords)
+        keyword_to_token.insert(k.keyword, k.token_type);
+
+    return keyword_to_token;
+}
+
+export template <CLexerTypes LexerTypes>
+consteval auto build_lexer(auto transition_callback, auto final_states_callback, auto keywords_callback)
+{
+    using ETerminal = LexerTypes::ETerminal;
+    using ELexerSymbol = LexerTypes::ELexerSymbol;
+    using ELexerError = LexerTypes::ELexerError;
+    using ILexerToken = LexerTypes::ILexerToken;
+
+    constexpr auto transitions = transition_callback();
+    constexpr auto final_states = final_states_callback();
+    constexpr auto keywords = keywords_callback();
+
+    static_assert(std::is_same_v<TransitionInfo, std::remove_cvref_t<decltype(transitions[0])>>, "Transitions array doesn't contain type: TransitionInfo");
+    static_assert(std::is_same_v<FinalStateInfo<ETerminal>, std::remove_cvref_t<decltype(final_states[0])>>, "Final states array doesn't contain type: FinalStateInfo<ETerminal>");
+    static_assert(std::is_same_v<KeywordInfo<ETerminal>, std::remove_cvref_t<decltype(keywords[0])>>, "Keywords array doesn't contain type: KeywordInfo<ETerminal>");
+
+    constexpr auto num_states = 1 + std::accumulate(transitions.begin(), transitions.end(), 0,
+        [](int ans, const auto& t) {
+            return std::max({ ans, t.from, t.to, t.default_transition_state });
+        }
+    );
+    constexpr auto num_keywords = keywords.size();
+
+    constexpr auto lexer = Lexer<LexerTypes, num_states, num_keywords>{
+        .dfa = build_dfa<ELexerSymbol, num_states>(
+            []() -> auto&& { return transitions; },
+            []() -> auto&& { return final_states; }
+            ),
+        .keyword_to_token = get_keywords_map<ETerminal, num_keywords>(keywords)
+    };
+
+    static_assert(lexer.keyword_to_token.size() == num_keywords, "Keywords have a duplicate entry!");
+
+    return lexer;
+}

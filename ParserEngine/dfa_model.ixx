@@ -1,11 +1,13 @@
 export module compiler_engine.models:dfa;
 
 import compiler_engine.structures;
+import helpers.checks;
 import <array>;
 import <string_view>;
 import <limits>;
 import <variant>;
 import <vector>;
+import <type_traits>;
 
 export template <CELexerSymbol ELexerSymbol, int num_states>
 struct DFA
@@ -16,11 +18,11 @@ struct DFA
     static const int state_count = num_states;
 
     std::array<std::array<int, 128>, num_states> productions;
-    std::array<ETerminal, num_states> final_states;
+    std::array<ELexerSymbol, num_states> final_states;
 
     constexpr DFA()
     {
-        for (auto& x : dfa.productions)
+        for (auto& x : productions)
             x.fill(-1);
 
         for (auto& x : final_states)
@@ -216,8 +218,8 @@ consteval auto build_dfa(auto transition_callback, auto final_states_callback)
     constexpr auto& transitions = transition_callback();
     constexpr auto& final_states = final_states_callback();
 
-    static_assert(std::is_same_v<TransitionInfo, decltype(transitions[0])>, "Transitions array doesn't contain type: TransitionInfo");
-    static_assert(std::is_same_v<FinalStateInfo<ETerminal>, decltype(final_states[0])>, "Final states array doesn't contain type: FinalStateInfo<ETerminal>");
+    static_assert(std::is_same_v<TransitionInfo, std::remove_cvref_t<decltype(transitions[0])>>, "Transitions array doesn't contain type: TransitionInfo");
+    static_assert(std::is_same_v<FinalStateInfo<ETerminal>, std::remove_cvref_t<decltype(final_states[0])>>, "Final states array doesn't contain type: FinalStateInfo<ETerminal>");
 
     // We can directly use static_assert here once we have C++26.
     ct_assert([]() { return validate_transitions<num_states>(transitions); });

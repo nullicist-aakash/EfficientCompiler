@@ -1,4 +1,4 @@
-export module compiler_engine.parser;
+/*export module compiler_engine.parser;
 
 import compiler_engine.lexer;
 import compiler_engine.structures;
@@ -288,4 +288,4 @@ export consteval auto build_parser(auto production_callback, const auto& keyword
                 ref = -2;
 
     return parser;
-}
+}*/

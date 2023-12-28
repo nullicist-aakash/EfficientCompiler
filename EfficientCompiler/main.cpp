@@ -2,10 +2,8 @@ import <string_view>;
 import <array>;
 import <vector>;
 import <variant>;
-import <ranges>;
 import <algorithm>;
-import compiler_engine.lexer;
-import compiler_engine.parser;
+import compiler_engine.models;
 import compiler_engine.structures;
 import helpers.reflection;
 
@@ -111,11 +109,11 @@ enum class NonTerminal
 
 struct LexerToken
 {
-    variant<Terminal, LexerErrorToken> type = LexerErrorToken::UNINITIALISED;
+    variant<Terminal, ELexerError> type = ELexerError::UNINITIALISED;
     std::string_view lexeme{};
     int line_num{1};
 
-    constexpr void afterConstruction(const LexerToken& previous_token)
+    constexpr void after_construction(const LexerToken& previous_token)
     {
         line_num = previous_token.line_num + 
             (int)std::count(previous_token.lexeme.begin(), previous_token.lexeme.end(), '\n');
@@ -244,9 +242,9 @@ static consteval auto get_lexer()
             };
         };
 
-    return build_lexer<LexerToken>(transitions, final_states, keywords);
+    return build_lexer<LexerTypes<LexerToken>>(transitions, final_states, keywords);
 }
-
+/*
 static consteval auto get_parser(const auto& lexer)
 {
     using enum NonTerminal;
@@ -334,7 +332,7 @@ static consteval auto get_parser(const auto& lexer)
         PI(more_expressions, { COMMA, expression, more_expressions }),
         PI(more_expressions, { eps }),
     }; }, lexer.keyword_to_token);
-}
+}*/
 
 static auto read_file(string_view filename)
 {
@@ -349,20 +347,6 @@ int main()
     constexpr auto lexer = get_lexer();
     auto contents = read_file("source.jack");
 
-    constexpr auto par = get_parser(lexer);
-
-    for (int i = 0; i < par.parse_table.size(); ++i)
-    {
-        cout << (NonTerminal)i << " :: ";
-
-        for (int j = 0; j < par.parse_table[i].size(); ++j)
-        {
-            if (par.parse_table[i][j] == -1)
-                continue;
-
-            cout << (Terminal)j << "(" << par.parse_table[i][j] << ") ";
-        }
-
-        cout << endl;
-    }
+    for (auto x: lexer(contents))
+		cout << x << endl;
 }

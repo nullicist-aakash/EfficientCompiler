@@ -344,5 +344,5 @@ int main()
     constexpr auto parser = get_parser(lexer);
     auto contents = read_file("source.jack");
 
-    cout << parser << endl;
+    parser(contents);
 }

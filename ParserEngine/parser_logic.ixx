@@ -6,6 +6,7 @@ import compiler.lexer;
 
 import <string_view>;
 import <iostream>;
+import <expected>;
 import <format>;
 import <vector>;
 import <stack>;
@@ -71,6 +72,11 @@ public:
 		return stack.empty();
 	}
 
+	constexpr auto& get_root()
+	{
+		return root;
+	}
+
 	constexpr void on_terminal_matched(CLexerToken auto& token)
 	{
 		parent->descendants[child_index] = std::make_unique<std::decay_t<decltype(token)>>(token);
@@ -114,6 +120,14 @@ public:
 	}
 };
 
+template <CParserTypes ParserTypes>
+struct ParserOutput
+{
+	std::unique_ptr<typename ParserTypes::ParseTreeNode> root;
+	std::string logs;
+	std::string error;
+};
+
 template <CEParserSymbol EParserSymbol, CLexerTypes LexerTypes, int num_states, int num_keywords, int max_prod_len, int num_productions>
 class Parser
 {
@@ -127,7 +141,7 @@ public:
 
 	auto operator()(std::string_view source_code) const
 	{
-		std::stringstream out{};
+		std::stringstream cerr{};
 
 		ParserStack<ParserTypes<LexerTypes, ENonTerminal>> stack{};
 
@@ -135,13 +149,13 @@ public:
 		{
 			if (stack.empty())
 			{
-				out << "Parser error (" << token << "): Input source code is syntactically incorrect.\n";
+				cerr << "Parser error (" << token << "): Input source code is syntactically incorrect.\n";
 				break;
 			}
 
 			if (std::holds_alternative<ELexerError>(token.type))
 			{
-				out << "Lexer error: " << token << "\n";
+				cerr << "Lexer error: " << token << "\n";
 				continue;
 			}
 
@@ -156,13 +170,21 @@ public:
 				stack.on_terminal_matched(token);
 			else
 			{
-				out << "Parser error (" << token << ") Invalid token encountered with stack top " << stack.top() << "\n";
+				cerr << "Parser error (" << token << ") Invalid token encountered with stack top " << stack.top() << "\n";
 				if (status != ParserStatus::NON_TERMINAL_ERROR)
 					stack.pop_with_tree();
 			}
 		}
 
-		return out.str();
+		if (!stack.empty() && stack.top() != ETerminal::TK_EOF)
+			cerr << "Parser error: No more tokens but parsing still left!\n";
+
+		ParserOutput<ParserTypes<LexerTypes, ENonTerminal>> output;
+		output.error = std::move(cerr.str());
+		if (output.error.empty())
+			output.root = std::move(stack.get_root());
+
+		return output;
 	}
 };
 

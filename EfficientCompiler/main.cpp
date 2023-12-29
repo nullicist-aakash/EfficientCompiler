@@ -244,7 +244,7 @@ static consteval auto get_parser(const auto& lexer)
 {
     using enum NonTerminal;
     using enum Terminal;
-    using PI = ProductionInfo<std::variant<Terminal, NonTerminal>, 30>;
+    using PI = ProductionInfo<LexerTypes<LexerToken>, NonTerminal, 30>;
     return build_parser([]() { return array {
         PI(start, _class, TK_EOF),
         PI(_class, CLASS, IDENTIFIER, CURO, class_vars, subroutineDecs, CURC),

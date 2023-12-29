@@ -19,27 +19,28 @@ import <type_traits>;
 import <utility>;
 import <variant>;
 
-export template <CEParserSymbol EParserSymbol, int max_prod_len, int num_productions>
+export template <CParserTypes ParserTypes, int max_prod_len, int num_productions>
 struct ParseTable
 {
-    using ETerminal = std::variant_alternative_t<0, EParserSymbol>;
-    using ENonTerminal = std::variant_alternative_t<1, EParserSymbol>;
+    using ETerminal = ParserTypes::ETerminal;
+    using ENonTerminal = ParserTypes::ENonTerminal;
     using ELexerSymbol = std::variant<ETerminal, ELexerError>;
+    using EParserSymbol = ParserTypes::EParserSymbol;
 
     using ProductionNumber = int;
 
     static constexpr auto num_terminals = get_enum_size<ETerminal>();
     static constexpr auto num_non_terminals = get_enum_size<ENonTerminal>();
 
-    std::array<ProductionInfo<EParserSymbol, max_prod_len>, num_productions> productions{};
+    std::array<ProductionInfo<LexerTypes<typename ParserTypes::ILexerToken>, ENonTerminal, max_prod_len>, num_productions> productions{};
     std::array<std::array<ProductionNumber, num_terminals>, num_non_terminals> parse_table{};
 };
 
 export template <typename T>
 concept IsParseTable = requires(T t)
 {
-    []<CEParserSymbol EParserSymbol, int max_prod_len, int num_productions>(
-        ParseTable<EParserSymbol, max_prod_len, num_productions>) { }(t);
+    []<CParserTypes ParserTypes, int max_prod_len, int num_productions>(
+        ParseTable<ParserTypes, max_prod_len, num_productions>) { }(t);
 };
 
 export template <typename ostream>
@@ -233,6 +234,7 @@ export consteval auto build_parse_table(auto production_callback, auto keyword_t
     constexpr auto productions = production_callback();
     using ETerminal = typename std::remove_cvref_t<decltype(*productions.begin())>::ETerminal;
     using ENonTerminal = typename std::remove_cvref_t<decltype(*productions.begin())>::ENonTerminal;
+    using _LexerTypes = typename std::remove_cvref_t<decltype(*productions.begin())>::LexerTypes;
     using EParserSymbol = std::variant<ETerminal, ENonTerminal>;
 
     constexpr auto num_terminals = get_enum_size<ETerminal>();
@@ -281,7 +283,7 @@ export consteval auto build_parse_table(auto production_callback, auto keyword_t
         target[(int)ETerminal::eps] = false;
     }
 
-    ParseTable<EParserSymbol, productions[0].production.size(), productions.size()> parser
+    ParseTable<ParserTypes<LexerTypes<typename _LexerTypes::ILexerToken>, ENonTerminal>, productions[0].production.size(), productions.size()> parser
     {
         .productions = productions,
         .parse_table = {}

@@ -4,6 +4,7 @@ import compiler.lexer;
 import <algorithm>;
 import <array>;
 import <concepts>;
+import <functional>;
 import <iterator>;
 import <memory>;
 import <string_view>;
@@ -78,11 +79,13 @@ struct ASTNode
     std::unique_ptr<ASTNode> sibling{};
 };
 
-export template <CEParserSymbol EParserSymbol, int max_prod_len = 30>
+export template <CLexerTypes _LexerTypes, CENonTerminal _ENonTerminal, int max_prod_len = 30>
 struct ProductionInfo
 {
-    using ETerminal = std::variant_alternative_t<0, EParserSymbol>;
-    using ENonTerminal = std::variant_alternative_t<1, EParserSymbol>;
+    using LexerTypes = _LexerTypes;
+    using ETerminal = LexerTypes::ETerminal;
+    using ENonTerminal = _ENonTerminal;
+    using EParserSymbol = std::variant<ETerminal, ENonTerminal>;
 
     const ENonTerminal start;
     const std::array<EParserSymbol, max_prod_len> production;
@@ -104,7 +107,7 @@ concept CParserTypes = requires()
     requires CLexerToken<typename T::ILexerToken>;
     requires CENonTerminal<typename T::ENonTerminal>;
     requires std::same_as<typename T::EParserSymbol, std::variant<typename T::ETerminal, typename T::ENonTerminal>>;
-    requires std::same_as<typename T::ProductionInfo, ProductionInfo<typename T::EParserSymbol>>;
+    requires std::same_as<typename T::ProductionInfo, ProductionInfo<LexerTypes<typename T::ILexerToken>, typename T::ENonTerminal>>;
     requires std::same_as<typename T::ParseTreeNode, ParseTreeNode<LexerTypes<typename T::ILexerToken>, typename T::ENonTerminal>>;
     requires std::same_as<typename T::ASTNode, ASTNode<LexerTypes<typename T::ILexerToken>, typename T::ENonTerminal>>;
 };
@@ -121,7 +124,7 @@ struct ParserTypes
     using ENonTerminal = ENT;
     using EParserSymbol = std::variant<ETerminal, ENonTerminal>;
 
-    using ProductionInfo = ProductionInfo<EParserSymbol>;
+    using ProductionInfo = ProductionInfo<LexerTypes, ENonTerminal>;
     using ParseTreeNode = ParseTreeNode<LexerTypes, ENonTerminal>;
     using ASTNode = ASTNode<LexerTypes, ENonTerminal>;
 };

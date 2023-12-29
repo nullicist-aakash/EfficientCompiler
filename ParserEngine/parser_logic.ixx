@@ -185,14 +185,13 @@ public:
 	}
 };
 
-template <CEParserSymbol EParserSymbol, CLexerTypes LexerTypes, int num_states, int num_keywords, int max_prod_len, int num_productions>
+template <CParserTypes ParserTypes, CLexerTypes LexerTypes, int num_states, int num_keywords, int max_prod_len, int num_productions>
 class Parser
 {
-	using ETerminal = std::variant_alternative_t<0, EParserSymbol>;
-	using ENonTerminal = std::variant_alternative_t<1, EParserSymbol>;
+	using ETerminal = ParserTypes::ETerminal;
+	using ENonTerminal = ParserTypes::ENonTerminal;
 	using ELexerSymbol = std::variant<ETerminal, ELexerError>;
 
-	template <CParserTypes ParserTypes>
 	struct ParserOutput
 	{
 		std::unique_ptr<typename ParserTypes::ParseTreeNode> root;
@@ -202,12 +201,12 @@ class Parser
 
 public:
 	Lexer<LexerTypes, num_states, num_keywords> lexer{};
-	ParseTable<EParserSymbol, max_prod_len, num_productions> parse_table{};
+	ParseTable<ParserTypes, max_prod_len, num_productions> parse_table{};
 
 	auto operator()(std::string_view source_code) const
 	{
 		std::stringstream clog, cerr{};
-		ParserStack<ParserTypes<LexerTypes, ENonTerminal>> stack(clog, cerr);
+		ParserStack<ParserTypes> stack(clog, cerr);
 
 		for (auto token : lexer(source_code))
 		{
@@ -226,7 +225,7 @@ public:
 		if (!stack.empty() && stack.top() != ETerminal::TK_EOF)
 			cerr << "Parser error: No more tokens but parsing still left!\n";
 
-		ParserOutput<ParserTypes<LexerTypes, ENonTerminal>> output;
+		ParserOutput output;
 		output.errors = std::move(cerr.str());
 		output.logs = std::move(clog.str());
 

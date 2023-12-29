@@ -241,12 +241,12 @@ static consteval auto get_lexer()
     return build_lexer<LexerTypes<LexerToken>>(transitions, final_states, keywords);
 }
 
-static consteval auto get_parser(const auto& lexer)
+static consteval auto get_parse_table(const auto& lexer)
 {
     using enum NonTerminal;
     using enum Terminal;
     using PI = ProductionInfo<std::variant<Terminal, NonTerminal>, 30>;
-    return build_parser([]() { return array {
+    return build_parse_table([]() { return array {
         PI(start, _class, TK_EOF),
         PI(_class, CLASS, IDENTIFIER, CURO, class_vars, subroutineDecs, CURC),
         PI(class_vars, class_var, class_vars),
@@ -341,9 +341,9 @@ static auto read_file(string_view filename)
 int main()
 {
     constexpr auto lexer = get_lexer();
-    constexpr auto parser = get_parser(lexer);
+    constexpr auto parse_table = get_parse_table(lexer);
     auto contents = read_file("source.jack");
 
     cout << lexer << endl;
-    cout << parser << endl;
+    cout << parse_table << endl;
 }

@@ -1,4 +1,4 @@
 export module compiler.parser;
 
 export import :structures;
-export import :parser;
+export import :parse_table;

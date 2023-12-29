@@ -143,6 +143,9 @@
     <ClCompile Update="C:\Users\Aakash\source\repos\EfficientCompiler\ParserEngine\lexer_logic.ixx">
       <FileType>Document</FileType>
     </ClCompile>
+    <ClCompile Update="C:\Users\Aakash\source\repos\EfficientCompiler\ParserEngine\parse_table_logic.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClCompile Update="C:\Users\Aakash\source\repos\EfficientCompiler\Reflection\checks.ixx">
       <FileType>Document</FileType>
     </ClCompile>

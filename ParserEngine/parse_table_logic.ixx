@@ -1,4 +1,4 @@
-export module compiler.parser:parser;
+export module compiler.parser:parse_table;
 
 import :structures;
 import compiler.lexer;
@@ -20,7 +20,7 @@ import <utility>;
 import <variant>;
 
 template <CEParserSymbol EParserSymbol, int max_prod_len, int num_productions>
-struct Parser
+struct ParseTable
 {
 private:
     using ETerminal = std::variant_alternative_t<0, EParserSymbol>;
@@ -35,29 +35,29 @@ public:
 };
 
 export template <typename ostream, CEParserSymbol EParserSymbol, int max_prod_len, int num_productions>
-constexpr ostream& operator<<(ostream& out, const Parser<EParserSymbol, max_prod_len, num_productions>& parser)
+constexpr ostream& operator<<(ostream& out, const ParseTable<EParserSymbol, max_prod_len, num_productions>& pt)
 {
     using ETerminal = std::variant_alternative_t<0, EParserSymbol>;
     using ENonTerminal = std::variant_alternative_t<1, EParserSymbol>;
 
-    out << "=================Parser=================\n";
+    out << "=================Productions and Parse Table=================\n";
     out << "Number of Non Terminals: " << get_enum_size<ENonTerminal>() << '\n';
-    out << "Productions (Count = " << parser.productions.size() << "):\n";
-    for (auto [prod_index, prod] : parser.productions | std::views::enumerate)
+    out << "Productions\n";
+    for (auto [prod_index, prod] : pt.productions | std::views::enumerate)
     {
         out << prod_index << ". " << prod.start << " -> ";
         std::copy(prod.production.begin(), prod.production.begin() + prod.size, std::ostream_iterator<EParserSymbol>(out, " "));
     	out << '\n';
     }
     out << R"(
-Parser Table:
+Parse Table:
 NonTerminal :: Terminal (Production Number)
 NonTerminal :: Sync Set Terminal
 
 )";
 
     for (const auto &[nt_index, productions]: 
-        parser.parse_table 
+        pt.parse_table
         | std::views::enumerate)
     {
         out << (ENonTerminal)nt_index << " :: ";
@@ -219,7 +219,7 @@ consteval auto get_follow_sets(const auto& productions, const auto& nullable_set
     return follow_set;
 }
 
-export constexpr auto build_parser(auto production_callback, auto keyword_to_token_map)
+export constexpr auto build_parse_table(auto production_callback, auto keyword_to_token_map)
 {
     constexpr auto productions = production_callback();
     using ETerminal = typename std::remove_cvref_t<decltype(*productions.begin())>::ETerminal;
@@ -272,7 +272,7 @@ export constexpr auto build_parser(auto production_callback, auto keyword_to_tok
         target[(int)ETerminal::eps] = false;
     }
 
-    Parser<EParserSymbol, productions[0].production.size(), productions.size()> parser
+    ParseTable<EParserSymbol, productions[0].production.size(), productions.size()> parser
     {
         .productions = productions,
         .parse_table = {}

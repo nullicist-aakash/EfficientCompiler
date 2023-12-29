@@ -3,6 +3,7 @@ import <array>;
 import <string_view>;
 import <vector>;
 import <variant>;
+import <ranges>;
 
 import compiler;
 import helpers.extensions;
@@ -119,7 +120,7 @@ struct LexerToken
 
     constexpr bool discard() const
     {
-        return true; // type == ELexerError::UNINITIALISED || type == Terminal::WHITESPACE || type == Terminal::COMMENT;
+        return type == Terminal::WHITESPACE || type == Terminal::COMMENT;
     }
 };
 
@@ -239,95 +240,95 @@ static consteval auto get_lexer()
 
     return build_lexer<LexerTypes<LexerToken>>(transitions, final_states, keywords);
 }
-/*
+
 static consteval auto get_parser(const auto& lexer)
 {
     using enum NonTerminal;
     using enum Terminal;
-    using PI = ProductionInfo<NonTerminal, Terminal, 30>;
+    using PI = ProductionInfo<std::variant<Terminal, NonTerminal>, 30>;
     return build_parser([]() { return array {
-        PI(start, { _class, TK_EOF }),
-        PI(_class, { CLASS, IDENTIFIER, CURO, class_vars, subroutineDecs, CURC }),
-        PI(class_vars, { class_var, class_vars }),
-        PI(class_vars, { eps }),
-        PI(subroutineDecs, { subroutineDec, subroutineDecs }),
-        PI(subroutineDecs, { eps }),
-        PI(class_var, { class_var_prefix, type, IDENTIFIER, more_identifiers, SEMICOLON }),
-        PI(class_var_prefix, { STATIC }),
-        PI(class_var_prefix, { FIELD }),
-        PI(type, { INT }),
-        PI(type, { CHAR }),
-        PI(type, { BOOLEAN }),
-        PI(type, { IDENTIFIER }),
-        PI(more_identifiers, { COMMA, IDENTIFIER, more_identifiers }),
-        PI(more_identifiers, { eps }),
-        PI(subroutineDec, { subroutine_prefix, subroutine_type, IDENTIFIER, PARENO, parameters, PARENC, subroutine_body }),
-        PI(subroutine_prefix, { CONSTRUCTOR }),
-        PI(subroutine_prefix, { FUNCTION }),
-        PI(subroutine_prefix, { METHOD }),
-        PI(subroutine_type, { type }),
-        PI(subroutine_type, { VOID }),
-        PI(parameters, { type, IDENTIFIER, more_parameters }),
-        PI(parameters, { eps }),
-        PI(more_parameters, { COMMA, type, IDENTIFIER, more_parameters }),
-        PI(more_parameters, { eps }),
-        PI(subroutine_body, { CURO, routine_vars, statements, CURC }),
-        PI(routine_vars, { routine_var, routine_vars }),
-        PI(routine_vars, { eps }),
-        PI(routine_var, { VAR, type, IDENTIFIER, more_identifiers, SEMICOLON }),
-        PI(statements, { statement, statements }),
-        PI(statements, { eps }),
-        PI(statement, { let_statement }),
-        PI(statement, { if_statement }),
-        PI(statement, { while_statement }),
-        PI(statement, { do_statement }),
-        PI(statement, { return_statement }),
-        PI(let_statement, { LET, IDENTIFIER, identifier_suffix, EQ, expression, SEMICOLON }),
-        PI(identifier_suffix, { eps }),
-        PI(identifier_suffix, { BRACKO, expression, BRACKC }),
-        PI(if_statement, { IF, PARENO, expression, PARENC, CURO, statements, CURC, else_statement }),
-        PI(else_statement, { eps }),
-        PI(else_statement, { ELSE, CURO, statements, CURC }),
-        PI(while_statement, { WHILE, PARENO, expression, PARENC, CURO, statements, CURC }),
-        PI(do_statement, { DO, subroutine_call, SEMICOLON }),
-        PI(return_statement, { RETURN, return_suffix, SEMICOLON }),
-        PI(return_suffix, { eps }),
-        PI(return_suffix, { expression }),
-        PI(expression, { term, expression_suffix }),
-        PI(expression_suffix, { op, term, expression_suffix }),
-        PI(expression_suffix, { eps }),
-        PI(term, { NUM }),
-        PI(term, { STR }),
-        PI(term, { TRUE }),
-        PI(term, { FALSE }),
-        PI(term, { TK_NULL }),
-        PI(term, { THIS }),
-        PI(term, { IDENTIFIER, term_sub_iden }),
-        PI(term_sub_iden, { eps }),
-        PI(term_sub_iden, { PARENO, expression_list, PARENC }),
-        PI(term_sub_iden, { DOT, IDENTIFIER, PARENO, expression_list, PARENC }),
-        PI(term_sub_iden, { BRACKO, expression, BRACKC }),
-        PI(term, { PARENO, expression, PARENC }),
-        PI(term, { MINUS, term }),
-        PI(term, { NOT, term }),
-        PI(op, { PLUS }),
-        PI(op, { MINUS }),
-        PI(op, { MULT }),
-        PI(op, { DIV }),
-        PI(op, { AND }),
-        PI(op, { OR }),
-        PI(op, { LE }),
-        PI(op, { GE }),
-        PI(op, { EQ }),
-        PI(subroutine_call, { IDENTIFIER, subroutine_scope, PARENO, expression_list, PARENC }),
-        PI(subroutine_scope, { DOT, IDENTIFIER }),
-        PI(subroutine_scope, { eps }),
-        PI(expression_list, { expression, more_expressions }),
-        PI(expression_list, { eps }),
-        PI(more_expressions, { COMMA, expression, more_expressions }),
-        PI(more_expressions, { eps }),
+        PI(start, _class, TK_EOF),
+        PI(_class, CLASS, IDENTIFIER, CURO, class_vars, subroutineDecs, CURC),
+        PI(class_vars, class_var, class_vars),
+        PI(class_vars, eps),
+        PI(subroutineDecs, subroutineDec, subroutineDecs),
+        PI(subroutineDecs, eps),
+        PI(class_var, class_var_prefix, type, IDENTIFIER, more_identifiers, SEMICOLON),
+        PI(class_var_prefix, STATIC),
+        PI(class_var_prefix, FIELD),
+        PI(type, INT),
+        PI(type, CHAR),
+        PI(type, BOOLEAN),
+        PI(type, IDENTIFIER),
+        PI(more_identifiers, COMMA, IDENTIFIER, more_identifiers),
+        PI(more_identifiers, eps),
+        PI(subroutineDec, subroutine_prefix, subroutine_type, IDENTIFIER, PARENO, parameters, PARENC, subroutine_body),
+        PI(subroutine_prefix, CONSTRUCTOR),
+        PI(subroutine_prefix, FUNCTION),
+        PI(subroutine_prefix, METHOD),
+        PI(subroutine_type, type),
+        PI(subroutine_type, VOID),
+        PI(parameters, type, IDENTIFIER, more_parameters),
+        PI(parameters, eps),
+        PI(more_parameters, COMMA, type, IDENTIFIER, more_parameters),
+        PI(more_parameters, eps),
+        PI(subroutine_body, CURO, routine_vars, statements, CURC),
+        PI(routine_vars, routine_var, routine_vars),
+        PI(routine_vars, eps),
+        PI(routine_var, VAR, type, IDENTIFIER, more_identifiers, SEMICOLON),
+        PI(statements, statement, statements),
+        PI(statements, eps),
+        PI(statement, let_statement),
+        PI(statement, if_statement),
+        PI(statement, while_statement),
+        PI(statement, do_statement),
+        PI(statement, return_statement),
+        PI(let_statement, LET, IDENTIFIER, identifier_suffix, EQ, expression, SEMICOLON),
+        PI(identifier_suffix, eps),
+        PI(identifier_suffix, BRACKO, expression, BRACKC),
+        PI(if_statement, IF, PARENO, expression, PARENC, CURO, statements, CURC, else_statement),
+        PI(else_statement, eps),
+        PI(else_statement, ELSE, CURO, statements, CURC),
+        PI(while_statement, WHILE, PARENO, expression, PARENC, CURO, statements, CURC),
+        PI(do_statement, DO, subroutine_call, SEMICOLON),
+        PI(return_statement, RETURN, return_suffix, SEMICOLON),
+        PI(return_suffix, eps),
+        PI(return_suffix, expression),
+        PI(expression, term, expression_suffix),
+        PI(expression_suffix, op, term, expression_suffix),
+        PI(expression_suffix, eps),
+        PI(term, NUM),
+        PI(term, STR),
+        PI(term, TRUE),
+        PI(term, FALSE),
+        PI(term, TK_NULL),
+        PI(term, THIS),
+        PI(term, IDENTIFIER, term_sub_iden),
+        PI(term_sub_iden, eps),
+        PI(term_sub_iden, PARENO, expression_list, PARENC),
+        PI(term_sub_iden, DOT, IDENTIFIER, PARENO, expression_list, PARENC),
+        PI(term_sub_iden, BRACKO, expression, BRACKC),
+        PI(term, PARENO, expression, PARENC),
+        PI(term, MINUS, term),
+        PI(term, NOT, term),
+        PI(op, PLUS),
+        PI(op, MINUS),
+        PI(op, MULT),
+        PI(op, DIV),
+        PI(op, AND),
+        PI(op, OR),
+        PI(op, LE),
+        PI(op, GE),
+        PI(op, EQ),
+        PI(subroutine_call, IDENTIFIER, subroutine_scope, PARENO, expression_list, PARENC),
+        PI(subroutine_scope, DOT, IDENTIFIER),
+        PI(subroutine_scope, eps),
+        PI(expression_list, expression, more_expressions),
+        PI(expression_list, eps),
+        PI(more_expressions, COMMA, expression, more_expressions),
+        PI(more_expressions, eps),
     }; }, lexer.keyword_to_token);
-}*/
+}
 
 static auto read_file(string_view filename)
 {
@@ -340,10 +341,9 @@ static auto read_file(string_view filename)
 int main()
 {
     constexpr auto lexer = get_lexer();
+    constexpr auto parser = get_parser(lexer);
     auto contents = read_file("source.jack");
 
     cout << lexer << endl;
-
-    for (auto x: lexer(contents))
-		cout << x << endl;
+    cout << parser << endl;
 }

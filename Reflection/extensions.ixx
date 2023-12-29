@@ -77,12 +77,11 @@ consteval auto get_enum_size()
 	return get_enum_array<Enum>().size();
 }
 
-export template <typename ostream, typename U, typename V>
-constexpr ostream& operator<<(ostream& out, const std::variant<U, V>& vr)
+export template <typename ostream, typename A, typename... Types>
+constexpr ostream& operator<<(ostream& out, const std::variant<A, Types...>& vr)
 {
-    if (std::holds_alternative<U>(vr))
-        return out << std::get<U>(vr);
-    return out << std::get<V>(vr);
+    std::visit([&](auto&& arg) { out << arg; }, vr);
+    return out;
 }
 
 export template <typename Type, typename... Types>

@@ -1,8 +1,10 @@
 export module compiler.parser:structures;
 
 import compiler.lexer;
+import <algorithm>;
 import <array>;
 import <concepts>;
+import <iterator>;
 import <memory>;
 import <string_view>;
 import <type_traits>;
@@ -28,17 +30,18 @@ concept CEParserSymbol = requires(T t)
 export template <CEParserSymbol EParserSymbol, int max_prod_len = 30>
 struct ProductionInfo
 {
+    using ETerminal = std::variant_alternative_t<0, EParserSymbol>;
     using ENonTerminal = std::variant_alternative_t<1, EParserSymbol>;
 
     ENonTerminal start;
     std::array<EParserSymbol, max_prod_len> production;
     std::size_t size;
 
-    constexpr ProductionInfo(auto start, const auto& production)
-        : start(start), size(production.size())
+    template <typename StartType, typename... ProdType>
+    constexpr ProductionInfo(StartType start, ProdType... production)
+        : start(start), production{production...}, size(sizeof...(production))
     {
-        for (std::size_t i = 0; i < production.size(); ++i)
-            this->production[i] = production[i];
+
     }
 };
 

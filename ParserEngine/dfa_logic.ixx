@@ -2,8 +2,11 @@ export module compiler.lexer:dfa;
 
 import :structures;
 import helpers.checks;
+import helpers.extensions;
+import <algorithm>;
 import <array>;
 import <limits>;
+import <ranges>;
 import <string_view>;
 import <type_traits>;
 import <variant>;
@@ -189,19 +192,54 @@ export template <
 >
 constexpr T& operator<<(T& out, const DFA<ELexerSymbol, num_states>& dfa)
 {
+    out << "==================DFA==================\n";
     using ETerminal = std::variant_alternative_t<0, ELexerSymbol>;
     using ELexerError = std::variant_alternative_t<1, ELexerSymbol>;
 
+    out << "Number of states: " << num_states << '\n';
+    out << "Number of Terminals: " << get_enum_size<ETerminal>() << '\n';
+
     out << "Transitions: \n";
-    for (int i = 0; i < num_states; ++i)
+    for (const auto &[from, transitions] : dfa.transitions | std::views::enumerate)
     {
-        out << i << ": ";
-        for (int j = 0; j < 128; ++j)
-            out << dfa.transitions[i][j] << " ";
-        out << '\n';
+        auto vec = transitions
+            | std::views::enumerate
+            | std::views::transform([](auto x) { return std::make_pair((int)std::get<1>(x), (int)std::get<0>(x)); })
+            | std::views::filter([](auto x) { return x.first != -1; })
+            | std::ranges::to<std::vector>();
+        std::ranges::sort(vec);
+
+        if (vec.size() == 0) continue;
+
+        out << from << "\n";
+        out << "\t-1: (" << std::count(std::begin(transitions), std::end(transitions), -1) << ")\n";
+
+        for (auto bgn = vec.begin(); bgn != vec.end(); )
+        {
+            const auto cur_end = std::partition(
+                bgn,
+                vec.end(),
+                [bgn](auto x) { return x.first == bgn->first; });
+
+            out << "\t" << bgn->first << ": ";
+            std::ranges::for_each(bgn, cur_end, [&](const auto& x) 
+                {
+                    if (x.second == '\t')
+                        out << "\\t";
+					else if (x.second == '\n')
+						out << "\\n";
+					else if (x.second == '\r')
+						out << "\\r";
+					else
+                        out << (char)x.second; 
+                });
+            out << "\n";
+
+            bgn = cur_end;
+        }
     }
 
-    out << "\nFinal States :\n";
+    out << "\nFinal States:\n";
     for (int i = 0; i < num_states; ++i)
         out << i << ": " << dfa.final_states[i] << '\n';
 

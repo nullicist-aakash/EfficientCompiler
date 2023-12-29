@@ -22,6 +22,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)parser.ixx">
       <Filter>Exports</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)parser_logic.ixx">
+      <Filter>Parser</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Lexer">

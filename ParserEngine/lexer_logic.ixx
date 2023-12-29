@@ -116,12 +116,13 @@ struct Lexer
     }
 };
 
-export template <typename T>
-constexpr T& operator<<(T& out, const IsLexer auto& lexer)
+export template <typename ostream>
+constexpr ostream& operator<<(ostream& out, const IsLexer auto& lexer)
 {
-    out << lexer.dfa << "\nKeywords:\n";
+    out << lexer.dfa << "\n";
+    out << "Number of Keywords: " << lexer.keyword_to_token.size() << "\n";
     for (const auto& [k, v] : lexer.keyword_to_token)
-        out << k << ": " << v << '\n';
+        out << k << " -> " << v << '\n';
 
     return out;
 }

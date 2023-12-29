@@ -101,7 +101,7 @@ public:
     }
 };
 
-template <CLexerTypes LexerTypes, int num_states, int num_keywords>
+export template <CLexerTypes LexerTypes, int num_states, int num_keywords>
 struct Lexer
 {
     using ETerminal = LexerTypes::ETerminal;

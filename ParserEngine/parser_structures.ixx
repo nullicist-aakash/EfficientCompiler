@@ -27,6 +27,32 @@ concept CEParserSymbol = requires(T t)
 };
 
 // Structures
+export template <CLexerTypes LexerTypes, CENonTerminal ENonTerminal>
+struct ParseTreeNode
+{
+    using LeafType = std::unique_ptr<typename LexerTypes::ILexerToken>;
+    using InternalNodeType = std::unique_ptr<ParseTreeNode>;
+
+    ENonTerminal node_type{};
+    int parent_child_index{ -1 };
+
+    ParseTreeNode const* parent{};
+    std::vector<std::variant<LeafType, InternalNodeType>> descendants{};
+};
+
+export template <CLexerTypes LexerTypes, CENonTerminal ENonTerminal>
+struct ASTNode
+{
+    using ETerminal = LexerTypes::ETerminal;
+    using ILexerToken = LexerTypes::ILexerToken;
+    std::variant<ETerminal, ENonTerminal> node_symbol_type{};
+
+    std::unique_ptr<ILexerToken> lexer_token{};
+
+    std::vector<std::unique_ptr<ASTNode>> descendants{};
+    std::unique_ptr<ASTNode> sibling{};
+};
+
 export template <CEParserSymbol EParserSymbol, int max_prod_len = 30>
 struct ProductionInfo
 {
@@ -39,48 +65,23 @@ struct ProductionInfo
 
     template <typename StartType, typename... ProdType>
     constexpr ProductionInfo(StartType start, ProdType... production)
-        : start(start), production{production...}, size(sizeof...(production))
+        : start(start), production{ production... }, size(sizeof...(production))
     {
 
     }
-};
-
-export template <CLexerTypes LexerTypes, CENonTerminal ENonTerminal>
-struct ParseTreeNode
-{
-    using LeafType = std::unique_ptr<typename LexerTypes::ILexerToken>;
-    using InternalNodeType = std::unique_ptr<ParseTreeNode>;
-
-    ENonTerminal node_type;
-    int parent_child_index;
-
-    ParseTreeNode const* parent;
-    std::variant<std::vector<LeafType>, std::vector<InternalNodeType>> descendants;
-};
-
-export template <CLexerTypes LexerTypes, CENonTerminal ENonTerminal>
-struct ASTNode
-{
-    using ETerminal = LexerTypes::ETerminal;
-    using ILexerToken = LexerTypes::ILexerToken;
-    std::variant<ETerminal, ENonTerminal> node_symbol_type;
-
-    std::unique_ptr<ILexerToken> lexer_token;
-
-    std::vector<std::unique_ptr<ASTNode>> children{};
-    std::unique_ptr<ASTNode> sibling = nullptr;
 };
 
 // Parser types
 export template <typename T>
 concept CParserTypes = requires()
 {
+    requires CLexerTypes<typename T::LexerTypes>;
     requires CLexerToken<typename T::ILexerToken>;
     requires CENonTerminal<typename T::ENonTerminal>;
     requires std::same_as<typename T::EParserSymbol, std::variant<typename T::ETerminal, typename T::ENonTerminal>>;
     requires std::same_as<typename T::ProductionInfo, ProductionInfo<typename T::EParserSymbol>>;
-    requires std::same_as<typename T::ParseTreeNode, ParseTreeNode<typename T::ILexerToken, typename T::ENonTerminal>>;
-    requires std::same_as<typename T::ASTNode, ASTNode<typename T::ILexerToken, typename T::ENonTerminal>>;
+    requires std::same_as<typename T::ParseTreeNode, ParseTreeNode<LexerTypes<typename T::ILexerToken>, typename T::ENonTerminal>>;
+    requires std::same_as<typename T::ASTNode, ASTNode<LexerTypes<typename T::ILexerToken>, typename T::ENonTerminal>>;
 };
 
 export template <CLexerTypes LexerTypes, CENonTerminal ENT>
@@ -89,6 +90,7 @@ struct ParserTypes
     using ELexerSymbol = LexerTypes::ELexerSymbol;
     using ETerminal = LexerTypes::ETerminal;
     using ELexerError = LexerTypes::ELexerError;
+
     using ILexerToken = LexerTypes::ILexerToken;
 
     using ENonTerminal = ENT;

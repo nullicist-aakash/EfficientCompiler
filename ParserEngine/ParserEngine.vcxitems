@@ -21,6 +21,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)lexer_logic.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)lexer_structures.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)parser.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)parser_logic.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)parse_table_logic.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)parser_structures.ixx" />
   </ItemGroup>

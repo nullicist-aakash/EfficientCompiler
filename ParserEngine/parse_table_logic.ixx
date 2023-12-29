@@ -19,17 +19,16 @@ import <type_traits>;
 import <utility>;
 import <variant>;
 
-template <CEParserSymbol EParserSymbol, int max_prod_len, int num_productions>
+export template <CEParserSymbol EParserSymbol, int max_prod_len, int num_productions>
 struct ParseTable
 {
-private:
     using ETerminal = std::variant_alternative_t<0, EParserSymbol>;
     using ENonTerminal = std::variant_alternative_t<1, EParserSymbol>;
     using ProductionNumber = int;
 
     static constexpr auto num_terminals = get_enum_size<ETerminal>();
     static constexpr auto num_non_terminals = get_enum_size<ENonTerminal>();
-public:
+
     std::array<ProductionInfo<EParserSymbol, max_prod_len>, num_productions> productions{};
     std::array<std::array<ProductionNumber, num_terminals>, num_non_terminals> parse_table{};
 };
@@ -219,7 +218,7 @@ consteval auto get_follow_sets(const auto& productions, const auto& nullable_set
     return follow_set;
 }
 
-export constexpr auto build_parse_table(auto production_callback, auto keyword_to_token_map)
+export consteval auto build_parse_table(auto production_callback, auto keyword_to_token_map)
 {
     constexpr auto productions = production_callback();
     using ETerminal = typename std::remove_cvref_t<decltype(*productions.begin())>::ETerminal;

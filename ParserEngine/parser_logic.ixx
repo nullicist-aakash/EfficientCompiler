@@ -8,12 +8,20 @@ import <string_view>;
 import <iostream>;
 import <expected>;
 import <format>;
+import <functional>;
 import <vector>;
 import <stack>;
 import <string>;
 import <variant>;
 import <sstream>;
 import <memory>;
+
+enum class ETokenConsumed
+{
+	CONSUMED,
+	NOT_CONSUMED,
+	STACK_EMPTY
+};
 
 template <CParserTypes ParserTypes>
 class ParserStack
@@ -27,65 +35,32 @@ class ParserStack
 
 	using InternalNodeType = ParseTreeNode::InternalNodeType;
 
-	std::stack<EParserSymbol> stack{};
+	std::vector<EParserSymbol> stack{};
 	std::unique_ptr<ParseTreeNode> root;
 
 	ParseTreeNode* parent;
 	int child_index;
 
-public:
-	constexpr ParserStack()
-	{
-		stack.push(ENonTerminal::start);
-		root = std::make_unique<ParseTreeNode>(ENonTerminal::start);
+	std::stringstream& log;
+	std::stringstream& err;
 
-		parent = nullptr;
-		child_index = 0;
-	}
-
-	constexpr auto pop_with_tree()
-	{
-		stack.pop();
-		while (child_index == parent->descendants.size() - 1)
-		{
-			child_index = parent->parent_child_index;
-			parent = parent->parent;
-
-			if (parent == nullptr)
-				return;
-		}
-		++child_index;
-	}
-
-	constexpr auto pop_only_stack()
-	{
-		stack.pop();
-	}
-
-	constexpr auto top() const
-	{
-		return stack.top();
-	}
-
-	constexpr auto empty() const
-	{
-		return stack.empty();
-	}
-
-	constexpr auto& get_root()
-	{
-		return root;
-	}
-
-	constexpr void on_terminal_matched(CLexerToken auto& token)
+	constexpr auto on_terminal_matched(CLexerToken auto& token)
 	{
 		parent->descendants[child_index] = std::make_unique<std::decay_t<decltype(token)>>(token);
-		pop_with_tree();
+		this->pop();
+		return ETokenConsumed::CONSUMED;
 	}
 
-	constexpr void on_non_terminal_expand(CLexerToken auto& token, auto& parse_table)
+	constexpr auto on_terminal_not_matched(CLexerToken auto& token)
 	{
-		const auto stack_top = std::get<ENonTerminal>(stack.top());
+		err << "Parser error (" << token << ") Invalid token encountered with stack top " << top() << "\n";
+		this->pop();
+		return ETokenConsumed::NOT_CONSUMED;
+	}
+
+	constexpr auto on_non_terminal_expand(CLexerToken auto& token, IsParseTable auto& parse_table)
+	{
+		const auto stack_top = std::get<ENonTerminal>(this->top());
 		const auto input_terminal = std::get<ETerminal>(token.type);
 
 		const auto production_number = parse_table.parse_table[(int)stack_top][(int)input_terminal];
@@ -94,8 +69,8 @@ public:
 		// empty production
 		if (production.size == 1 && production.production[0] == ETerminal::eps)
 		{
-			pop_with_tree();
-			return;
+			this->pop();
+			return ETokenConsumed::NOT_CONSUMED;
 		}
 
 		auto& node = parent ? *(std::get<InternalNodeType>(parent->descendants[child_index]).get()) : *root.get();
@@ -111,21 +86,103 @@ public:
 					(int)index
 				));
 
-		stack.pop();
-		for (auto &symbol: production.production | std::views::take(production.size) | std::views::reverse)
-			stack.push(symbol);
+		stack.pop_back();
+		for (auto& symbol : production.production | std::views::take(production.size) | std::views::reverse)
+			stack.push_back(symbol);
 
 		parent = &node;
 		child_index = 0;
+		return ETokenConsumed::NOT_CONSUMED;
 	}
-};
 
-template <CParserTypes ParserTypes>
-struct ParserOutput
-{
-	std::unique_ptr<typename ParserTypes::ParseTreeNode> root;
-	std::string logs;
-	std::string error;
+	constexpr auto on_non_terminal_error(CLexerToken auto& token)
+	{
+		err << "Parser error (" << token << ") Invalid token encountered with stack top " << top() << "\n";
+		return ETokenConsumed::CONSUMED;
+	}
+
+	constexpr auto on_non_terminal_sync(CLexerToken auto& token)
+	{
+		err << "Parser error (" << token << ") Invalid token encountered with stack top " << top() << "\n";
+		this->pop();
+		return ETokenConsumed::NOT_CONSUMED;
+	}
+
+	constexpr auto pop()
+	{
+		stack.pop_back();
+		while (child_index == parent->descendants.size() - 1)
+		{
+			child_index = parent->parent_child_index;
+			parent = parent->parent;
+
+			if (parent == nullptr)
+				return;
+		}
+		++child_index;
+	}
+
+public:
+	constexpr ParserStack(auto& log, auto& err) : log{ log }, err{ err }
+	{
+		stack.push_back(ENonTerminal::start);
+		root = std::make_unique<ParseTreeNode>(ENonTerminal::start);
+
+		parent = nullptr;
+		child_index = 0;
+	}
+
+	constexpr inline auto top() const
+	{
+		return stack.back();
+	}
+
+	constexpr inline auto empty() const
+	{
+		return stack.empty();
+	}
+
+	constexpr inline auto& get_root()
+	{
+		return root;
+	}
+
+	constexpr auto process_token(CLexerToken auto& token, IsParseTable auto& parse_table)
+	{
+		log << "Stack: ";
+		for (auto& symbol : stack)
+			log << symbol << " ";
+		log << "(top)\nToken: " << token << "\n\n";
+		
+		if (this->empty())
+		{
+			err << "Parser error (" << token << "): Input source code is syntactically incorrect.\n";
+			return ETokenConsumed::STACK_EMPTY;
+		}
+
+		const auto token_type = std::get<ETerminal>(token.type);
+
+		// Stack top is terminal
+		if (auto stored_type = std::get_if<ETerminal>(&stack.back()); stored_type)
+		{
+			if (*stored_type == token_type)
+				return on_terminal_matched(token);
+
+			return on_terminal_not_matched(token);
+		}
+
+		// Stack top is non terminal
+		const auto non_terminal = std::get<ENonTerminal>(this->top());
+		const auto prod_number = parse_table.parse_table[(int)non_terminal][(int)token_type];
+
+		if (prod_number == -1)
+			return on_non_terminal_error(token);
+
+		if (prod_number == -2)
+			return on_non_terminal_sync(token);
+
+		return on_non_terminal_expand(token, parse_table);
+	}
 };
 
 template <CEParserSymbol EParserSymbol, CLexerTypes LexerTypes, int num_states, int num_keywords, int max_prod_len, int num_productions>
@@ -135,53 +192,45 @@ class Parser
 	using ENonTerminal = std::variant_alternative_t<1, EParserSymbol>;
 	using ELexerSymbol = std::variant<ETerminal, ELexerError>;
 
+	template <CParserTypes ParserTypes>
+	struct ParserOutput
+	{
+		std::unique_ptr<typename ParserTypes::ParseTreeNode> root;
+		std::string logs;
+		std::string errors;
+	};
+
 public:
 	Lexer<LexerTypes, num_states, num_keywords> lexer{};
 	ParseTable<EParserSymbol, max_prod_len, num_productions> parse_table{};
 
 	auto operator()(std::string_view source_code) const
 	{
-		std::stringstream cerr{};
-
-		ParserStack<ParserTypes<LexerTypes, ENonTerminal>> stack{};
+		std::stringstream clog, cerr{};
+		ParserStack<ParserTypes<LexerTypes, ENonTerminal>> stack(clog, cerr);
 
 		for (auto token : lexer(source_code))
 		{
-			if (stack.empty())
-			{
-				cerr << "Parser error (" << token << "): Input source code is syntactically incorrect.\n";
-				break;
-			}
-
 			if (std::holds_alternative<ELexerError>(token.type))
 			{
 				cerr << "Lexer error: " << token << "\n";
 				continue;
 			}
 
-			auto status = parse_table.get_parse_status(stack.top(), token.type);
-			while (status == ParserStatus::NON_TERMINAL_EXPAND)
-			{
-				stack.on_non_terminal_expand(token, parse_table); 
-				status = parse_table.get_parse_status(stack.top(), token.type);
-			}
+			while (stack.process_token(token, parse_table) == ETokenConsumed::NOT_CONSUMED);
 
-			if (status == ParserStatus::TERMINAL_MATCHED)
-				stack.on_terminal_matched(token);
-			else
-			{
-				cerr << "Parser error (" << token << ") Invalid token encountered with stack top " << stack.top() << "\n";
-				if (status != ParserStatus::NON_TERMINAL_ERROR)
-					stack.pop_with_tree();
-			}
+			if (stack.empty())
+				break;
 		}
 
 		if (!stack.empty() && stack.top() != ETerminal::TK_EOF)
 			cerr << "Parser error: No more tokens but parsing still left!\n";
 
 		ParserOutput<ParserTypes<LexerTypes, ENonTerminal>> output;
-		output.error = std::move(cerr.str());
-		if (output.error.empty())
+		output.errors = std::move(cerr.str());
+		output.logs = std::move(clog.str());
+
+		if (output.errors.empty())
 			output.root = std::move(stack.get_root());
 
 		return output;

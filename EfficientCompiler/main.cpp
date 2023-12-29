@@ -127,8 +127,7 @@ struct LexerToken
 template <typename T>
 constexpr T& operator<<(T& out, const LexerToken& tk)
 {
-    out << tk.line_num << " " << tk.type << " " << tk.lexeme;
-    return out;
+    return out << "{ line_number: " << tk.line_num << ", type: " << tk.type << ", lexeme: '" << tk.lexeme << "' }";
 }
 
 static consteval auto get_lexer()
@@ -345,5 +344,6 @@ int main()
     auto contents = read_file("source.jack");
 
     const auto output = parser(contents);
-    cout << output.error << endl;
+    cout << output.logs << endl;
+    cout << output.errors << endl;
 }

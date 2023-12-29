@@ -345,5 +345,5 @@ int main()
     auto contents = read_file("source.jack");
 
     const auto output = parser(contents);
-    cout << output.error << endl;
+    cout << output.errors << endl;
 }

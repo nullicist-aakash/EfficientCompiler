@@ -19,15 +19,6 @@ import <type_traits>;
 import <utility>;
 import <variant>;
 
-export enum class ParserStatus
-{
-    TERMINAL_MATCHED,
-    TERMINAL_NOT_MATCHED,
-    NON_TERMINAL_EXPAND,
-    NON_TERMINAL_ERROR,
-    NON_TERMINAL_SYNC
-};
-
 export template <CEParserSymbol EParserSymbol, int max_prod_len, int num_productions>
 struct ParseTable
 {
@@ -42,39 +33,13 @@ struct ParseTable
 
     std::array<ProductionInfo<EParserSymbol, max_prod_len>, num_productions> productions{};
     std::array<std::array<ProductionNumber, num_terminals>, num_non_terminals> parse_table{};
-
-    constexpr ParserStatus get_parse_status(EParserSymbol stack_top, ELexerSymbol token_type) const
-    {
-        const auto terminal_token = std::get<ETerminal>(token_type);
-
-        // Stack top is terminal
-        if (std::holds_alternative<ETerminal>(stack_top))
-		{
-			if (std::get<ETerminal>(stack_top) == terminal_token)
-				return ParserStatus::TERMINAL_MATCHED;
-			
-            return ParserStatus::TERMINAL_NOT_MATCHED;
-		}
-
-        // Stack top is non terminal
-		const auto non_terminal = std::get<ENonTerminal>(stack_top);
-		const auto prod_number = parse_table[(int)non_terminal][(int)terminal_token];
-
-		if (prod_number == -1)
-			return ParserStatus::NON_TERMINAL_ERROR;
-
-		if (prod_number == -2)
-			return ParserStatus::NON_TERMINAL_SYNC;
-
-		return ParserStatus::NON_TERMINAL_EXPAND;
-    }
 };
 
-template <typename T>
+export template <typename T>
 concept IsParseTable = requires(T t)
 {
     []<CEParserSymbol EParserSymbol, int max_prod_len, int num_productions>(
-        ParseTable<EParserSymbol, max_prod_len, num_productions>&) { }(t);
+        ParseTable<EParserSymbol, max_prod_len, num_productions>) { }(t);
 };
 
 export template <typename ostream>

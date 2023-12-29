@@ -33,10 +33,13 @@ struct ParseTreeNode
     using LeafType = std::unique_ptr<typename LexerTypes::ILexerToken>;
     using InternalNodeType = std::unique_ptr<ParseTreeNode>;
 
-    ENonTerminal node_type{};
-    int parent_child_index{ -1 };
+    const ENonTerminal node_type{};
 
-    ParseTreeNode const* parent{};
+    ParseTreeNode* const parent{};
+    const int parent_child_index{ -1 };
+
+    int production_number { -1 };
+
     std::vector<std::variant<LeafType, InternalNodeType>> descendants{};
 };
 
@@ -59,15 +62,15 @@ struct ProductionInfo
     using ETerminal = std::variant_alternative_t<0, EParserSymbol>;
     using ENonTerminal = std::variant_alternative_t<1, EParserSymbol>;
 
-    ENonTerminal start;
-    std::array<EParserSymbol, max_prod_len> production;
-    std::size_t size;
+    const ENonTerminal start;
+    const std::array<EParserSymbol, max_prod_len> production;
+    const std::size_t size;
 
     template <typename StartType, typename... ProdType>
     constexpr ProductionInfo(StartType start, ProdType... production)
         : start(start), production{ production... }, size(sizeof...(production))
     {
-
+        static_assert(sizeof...(production) > 0, "Can't have a production with no expansion.");
     }
 };
 
@@ -75,7 +78,7 @@ struct ProductionInfo
 export template <typename T>
 concept CParserTypes = requires()
 {
-    requires CLexerTypes<typename T::LexerTypes>;
+    requires CLexerTypes<LexerTypes<typename T::ILexerToken>>;
     requires CLexerToken<typename T::ILexerToken>;
     requires CENonTerminal<typename T::ENonTerminal>;
     requires std::same_as<typename T::EParserSymbol, std::variant<typename T::ETerminal, typename T::ENonTerminal>>;

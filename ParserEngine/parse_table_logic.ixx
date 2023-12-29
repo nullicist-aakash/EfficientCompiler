@@ -74,11 +74,19 @@ struct ParseTable
     }
 };
 
-export template <typename ostream, CEParserSymbol EParserSymbol, int max_prod_len, int num_productions>
-constexpr ostream& operator<<(ostream& out, const ParseTable<EParserSymbol, max_prod_len, num_productions>& pt)
+template <typename T>
+concept IsParseTable = requires(T t)
 {
-    using ETerminal = std::variant_alternative_t<0, EParserSymbol>;
-    using ENonTerminal = std::variant_alternative_t<1, EParserSymbol>;
+    []<CEParserSymbol EParserSymbol, int max_prod_len, int num_productions>(
+        ParseTable<EParserSymbol, max_prod_len, num_productions>&) { }(t);
+};
+
+export template <typename ostream>
+constexpr ostream& operator<<(ostream& out, const IsParseTable auto& pt)
+{
+    using ETerminal = std::decay_t<decltype(pt)>::ETerminal;
+    using ENonTerminal = std::decay_t<decltype(pt)>::ENonTerminal;
+    using EParserSymbol = std::variant<ETerminal, ENonTerminal>;
 
     out << "=================Productions and Parse Table=================\n";
     out << "Number of Non Terminals: " << get_enum_size<ENonTerminal>() << '\n';

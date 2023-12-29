@@ -21,7 +21,6 @@ import <variant>;
 
 export enum class ParserStatus
 {
-    LEXER_ERROR,
     TERMINAL_MATCHED,
     TERMINAL_NOT_MATCHED,
     NON_TERMINAL_EXPAND,
@@ -46,9 +45,6 @@ struct ParseTable
 
     constexpr ParserStatus get_parse_status(EParserSymbol stack_top, ELexerSymbol token_type) const
     {
-        if (std::holds_alternative<ELexerError>(token_type))
-			return ParserStatus::LEXER_ERROR;
-
         const auto terminal_token = std::get<ETerminal>(token_type);
 
         // Stack top is terminal

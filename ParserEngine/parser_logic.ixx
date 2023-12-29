@@ -22,7 +22,8 @@ class ParserStack
 	using ELexerSymbol = ParserTypes::ELexerSymbol;
 	using EParserSymbol = ParserTypes::EParserSymbol;
 	using ParseTreeNode = ParserTypes::ParseTreeNode;
-	using LeafType = ParseTreeNode::LeafType;
+	using ILexerToken = ParserTypes::ILexerToken;
+
 	using InternalNodeType = ParseTreeNode::InternalNodeType;
 
 	std::stack<EParserSymbol> stack{};
@@ -31,19 +32,14 @@ class ParserStack
 	ParseTreeNode* parent;
 	int child_index;
 
-	constexpr LeafType* terminal_leaf()
-	{
-		return std::get_if<LeafType>(&parent->descendants[child_index]);
-	}
-
 public:
 	constexpr ParserStack()
 	{
 		stack.push(ENonTerminal::start);
 		root = std::make_unique<ParseTreeNode>(ENonTerminal::start);
 
-		parent = root.get();
-		child_index = -1;
+		parent = nullptr;
+		child_index = 0;
 	}
 
 	constexpr auto pop_with_tree()
@@ -58,17 +54,6 @@ public:
 				return;
 		}
 		++child_index;
-
-		/*
-    while (node->parent_child_index == node->parent->children.size() - 1)
-    {
-        node = node->parent;
-        if (node->parent == nullptr)
-            return;
-    }
-
-    node = node->parent->children[node->parent_child_index + 1];
-*/
 	}
 
 	constexpr auto pop_only_stack()
@@ -88,7 +73,7 @@ public:
 
 	constexpr void on_terminal_matched(CLexerToken auto& token)
 	{
-		*terminal_leaf() = std::make_unique<std::decay_t<decltype(token)>>(token);
+		parent->descendants[child_index] = std::make_unique<std::decay_t<decltype(token)>>(token);
 		pop_with_tree();
 	}
 
@@ -100,9 +85,6 @@ public:
 		const auto production_number = parse_table.parse_table[(int)stack_top][(int)input_terminal];
 		const auto& production = parse_table.productions[production_number];
 
-		auto& node = *(std::get<InternalNodeType>(parent->descendants[child_index]).get());
-		node.production_number = production_number;
-
 		// empty production
 		if (production.size == 1 && production.production[0] == ETerminal::eps)
 		{
@@ -110,38 +92,25 @@ public:
 			return;
 		}
 
-		for (auto [index, symbol] : production.production | std::views::take(production.size) | std::views::enumerate)
-		{
-			if (std::holds_alternative<ETerminal>(symbol))
-				continue;
+		auto& node = parent ? *(std::get<InternalNodeType>(parent->descendants[child_index]).get()) : *root.get();
+		node.production_number = production_number;
 
-			node.descendants.push_back(std::make_unique<ParseTreeNode>(
-				std::get<ENonTerminal>(symbol),
-				&node,
-				(int)index
-			));
-		}
+		for (auto [index, symbol] : production.production | std::views::take(production.size) | std::views::enumerate)
+			if (std::holds_alternative<ETerminal>(symbol))
+				node.descendants.push_back(std::make_unique<ILexerToken>());
+			else
+				node.descendants.push_back(std::make_unique<ParseTreeNode>(
+					std::get<ENonTerminal>(symbol),
+					&node,
+					(int)index
+				));
 
 		stack.pop();
 		for (auto &symbol: production.production | std::views::take(production.size) | std::views::reverse)
 			stack.push(symbol);
 
 		parent = &node;
-
-		/*
-            for (size_t i = production_size - 1; i > 0; --i)
-            {
-                st.push(production[i]);
-
-                // -1 here because production[0] is the start symbol
-                node->children[i - 1] = new ParseTreeNode;
-
-                node->children[i - 1]->parent = node;
-                node->children[i - 1]->symbol_index = production[i];
-                node->children[i - 1]->parent_child_index = i - 1;
-            }
-
-            node = node->children[0];*/
+		child_index = 0;
 	}
 };
 
@@ -170,18 +139,21 @@ public:
 				break;
 			}
 
-			const auto status = parse_table.get_parse_status(stack.top(), token.type);
-
-			if (status == ParserStatus::LEXER_ERROR)
+			if (std::holds_alternative<ELexerError>(token.type))
 			{
 				out << "Lexer error: " << token << "\n";
 				continue;
 			}
 
+			auto status = parse_table.get_parse_status(stack.top(), token.type);
+			while (status == ParserStatus::NON_TERMINAL_EXPAND)
+			{
+				stack.on_non_terminal_expand(token, parse_table); 
+				status = parse_table.get_parse_status(stack.top(), token.type);
+			}
+
 			if (status == ParserStatus::TERMINAL_MATCHED)
 				stack.on_terminal_matched(token);
-			else if (status == ParserStatus::NON_TERMINAL_EXPAND)
-				stack.on_non_terminal_expand(token, parse_table);
 			else
 			{
 				out << "Parser error (" << token << ") Invalid token encountered with stack top " << stack.top() << "\n";

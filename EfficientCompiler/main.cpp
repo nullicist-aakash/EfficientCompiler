@@ -346,4 +346,5 @@ int main()
     const auto output = parser(contents);
     cout << output.logs << endl;
     cout << output.errors << endl;
+    cout << *output.root << endl;
 }

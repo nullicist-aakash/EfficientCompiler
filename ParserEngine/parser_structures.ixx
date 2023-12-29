@@ -41,7 +41,29 @@ struct ParseTreeNode
     int production_number { -1 };
 
     std::vector<std::variant<LeafType, InternalNodeType>> descendants{};
+
+    template<typename ostream>
+    constexpr void print(ostream& os, int depth = 0) const
+    {
+        for (int i = 0; i < depth; ++i) os << "\t";
+		os << node_type << '\n';
+		for (const auto& descendant : descendants)
+            if (std::holds_alternative<LeafType>(descendant))
+            {
+                for (int i = 0; i <= depth; ++i) os << "\t";
+                os << *std::get<LeafType>(descendant) << '\n';
+            }
+            else
+				std::get<InternalNodeType>(descendant)->print(os, depth + 1);
+    }
 };
+
+export template<typename ostream, CLexerTypes LexerTypes, CENonTerminal ENonTerminal>
+constexpr ostream& operator<<(ostream& os, const ParseTreeNode<LexerTypes, ENonTerminal>& node)
+{
+    node.print(os, 0);
+    return os;
+}
 
 export template <CLexerTypes LexerTypes, CENonTerminal ENonTerminal>
 struct ASTNode

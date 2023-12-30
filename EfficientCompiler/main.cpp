@@ -1,4 +1,5 @@
 import JackParser;
+import ArithmeticParser;
 
 #include <fstream>
 #include <iostream>
@@ -18,9 +19,10 @@ static auto read_file(string_view filename)
 
 int main()
 {
-    constexpr auto parser = get_jack_parser();
-    auto contents = read_file("source.jack");
-
-    const auto output = parser(contents);
-    cout << parser << endl;
+	constexpr auto aparser = get_arithmetic_parser();
+	const auto output2 = aparser("1 + 2 + 4");
+	cout << aparser << endl;
+	cout << output2.logs << endl;
+	cout << output2.errors << endl;
+	cout << *output2.root << endl;
 }

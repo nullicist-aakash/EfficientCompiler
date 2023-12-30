@@ -217,13 +217,12 @@ public:
 			}
 
 			while (stack.process_token(token, parse_table) == ETokenConsumed::NOT_CONSUMED);
-
-			if (stack.empty())
-				break;
 		}
 
-		if (!stack.empty() && stack.top() != ETerminal::TK_EOF)
+		if (!stack.empty())
 			cerr << "Parser error: No more tokens but parsing still left!\n";
+		else
+			clog << "Parser success: Parsing complete!\n";
 
 		ParserOutput output;
 		output.errors = std::move(cerr.str());

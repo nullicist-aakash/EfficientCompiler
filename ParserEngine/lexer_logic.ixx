@@ -36,6 +36,7 @@ class LexerStringWrapper
         const LexerStringWrapper& lexer_string;
         ILexerToken token;
         std::size_t cur_position{ 0 };
+        int end_passed_count = 0;
 
         constexpr auto get_token_from_dfa()
         {
@@ -66,7 +67,8 @@ class LexerStringWrapper
         }
         constexpr bool operator!=(sentinel) const
         {
-            return token.type != ETerminal::TK_EOF;
+            // Pass atleast one TK_EOF so that parser can be sure that the input has ended
+            return end_passed_count < 2;
         }
         constexpr const auto& operator++() 
         {
@@ -75,6 +77,7 @@ class LexerStringWrapper
                 token = get_token_from_dfa();
             } while (token.discard() && token.type != ETerminal::TK_EOF);
 
+            end_passed_count += token.type == ETerminal::TK_EOF;
             return *this;
         }
         constexpr const auto& operator*() const

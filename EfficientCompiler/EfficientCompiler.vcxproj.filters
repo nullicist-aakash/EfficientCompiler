@@ -19,7 +19,10 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="JackParser.ixx">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ArithmeticParser.ixx">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

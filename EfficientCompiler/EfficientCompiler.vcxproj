@@ -134,6 +134,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ArithmeticParser.ixx" />
     <ClCompile Include="JackParser.ixx" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>

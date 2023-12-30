@@ -19,7 +19,7 @@ struct ASTNode
     std::unique_ptr<ASTNode> sibling{};
 };
 
-struct ASTVisitor
+struct ASTVisitorBase
 {
-
+    
 };

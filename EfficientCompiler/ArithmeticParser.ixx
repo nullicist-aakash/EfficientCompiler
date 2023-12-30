@@ -23,7 +23,7 @@ enum class ATerminal
     WHITESPACE,
 };
 
-enum class ANonTerminal
+export enum class ANonTerminal
 {
     start,
     expression

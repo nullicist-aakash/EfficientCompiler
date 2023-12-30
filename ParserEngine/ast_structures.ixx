@@ -11,15 +11,34 @@ struct ASTNode
 {
     using ETerminal = LexerTypes::ETerminal;
     using ILexerToken = LexerTypes::ILexerToken;
-    std::variant<ETerminal, ENonTerminal> node_symbol_type{};
+    using LeafType = std::unique_ptr<typename LexerTypes::ILexerToken>;
 
-    std::unique_ptr<ILexerToken> lexer_token{};
+    const std::variant<ETerminal, ENonTerminal> node_symbol_type{};
+    const std::unique_ptr<ILexerToken> lexer_token{};
 
     std::vector<std::unique_ptr<ASTNode>> descendants{};
-    std::unique_ptr<ASTNode> sibling{};
+
+    ASTNode() = default;
+
+    ASTNode(ParseTreeNode<LexerTypes, ENonTerminal>* ptnode) :
+        node_symbol_type{ ptnode->node_type },
+        lexer_token { nullptr }
+    {
+
+    }
+
+    ASTNode(LeafType leaf) :
+        node_symbol_type{ std::get<ETerminal>(leaf->type) },
+        lexer_token{ std::move(leaf) }
+    {
+
+    }
 };
 
-struct ASTVisitorBase
+
+export template <typename T>
+concept IsASTNode = requires(T t)
 {
-    
+    [] <CLexerTypes LexerTypes, CENonTerminal ENonTerminal>
+        (ASTNode<LexerTypes, ENonTerminal>&) {}(t);
 };

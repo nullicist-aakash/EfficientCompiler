@@ -28,9 +28,12 @@ concept CEParserSymbol = requires(T t)
 };
 
 // Structures
-export template <CLexerTypes LexerTypes, CENonTerminal ENonTerminal>
+export template <CLexerTypes _LexerTypes, CENonTerminal _ENonTerminal>
 struct ParseTreeNode
 {
+    using LexerTypes = _LexerTypes;
+    using ENonTerminal = _ENonTerminal;
+
     using LeafType = std::unique_ptr<typename LexerTypes::ILexerToken>;
     using InternalNodeType = std::unique_ptr<ParseTreeNode>;
 
@@ -57,10 +60,27 @@ struct ParseTreeNode
             else
 				std::get<InternalNodeType>(descendant)->print(os, depth + 1);
     }
+
+    constexpr inline auto extract_child_leaf(int index)
+    {
+        return std::move(std::get<LeafType>(descendants[index]));
+    }
+
+    constexpr inline auto extract_child_node(int index)
+    {
+        return std::move(std::get<InternalNodeType>(descendants[index]));
+    }
 };
 
-export template<typename ostream, CLexerTypes LexerTypes, CENonTerminal ENonTerminal>
-constexpr ostream& operator<<(ostream& os, const ParseTreeNode<LexerTypes, ENonTerminal>& node)
+export template <typename T>
+concept IsParseTreeNode = requires(T t)
+{
+    [] <CLexerTypes LexerTypes, CENonTerminal ENonTerminal>
+        (ParseTreeNode<LexerTypes, ENonTerminal>&) {}(t);
+};
+
+export template<typename ostream>
+constexpr ostream& operator<<(ostream& os, const IsParseTreeNode auto& node)
 {
     node.print(os, 0);
     return os;

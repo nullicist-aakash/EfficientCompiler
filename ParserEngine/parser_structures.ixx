@@ -66,19 +66,6 @@ constexpr ostream& operator<<(ostream& os, const ParseTreeNode<LexerTypes, ENonT
     return os;
 }
 
-export template <CLexerTypes LexerTypes, CENonTerminal ENonTerminal>
-struct ASTNode
-{
-    using ETerminal = LexerTypes::ETerminal;
-    using ILexerToken = LexerTypes::ILexerToken;
-    std::variant<ETerminal, ENonTerminal> node_symbol_type{};
-
-    std::unique_ptr<ILexerToken> lexer_token{};
-
-    std::vector<std::unique_ptr<ASTNode>> descendants{};
-    std::unique_ptr<ASTNode> sibling{};
-};
-
 export template <CLexerTypes _LexerTypes, CENonTerminal _ENonTerminal, int max_prod_len = 30>
 struct ProductionInfo
 {
@@ -109,7 +96,6 @@ concept CParserTypes = requires()
     requires std::same_as<typename T::EParserSymbol, std::variant<typename T::ETerminal, typename T::ENonTerminal>>;
     requires std::same_as<typename T::ProductionInfo, ProductionInfo<LexerTypes<typename T::ILexerToken>, typename T::ENonTerminal>>;
     requires std::same_as<typename T::ParseTreeNode, ParseTreeNode<LexerTypes<typename T::ILexerToken>, typename T::ENonTerminal>>;
-    requires std::same_as<typename T::ASTNode, ASTNode<LexerTypes<typename T::ILexerToken>, typename T::ENonTerminal>>;
 };
 
 export template <CLexerTypes LexerTypes, CENonTerminal ENT>
@@ -126,5 +112,4 @@ struct ParserTypes
 
     using ProductionInfo = ProductionInfo<LexerTypes, ENonTerminal>;
     using ParseTreeNode = ParseTreeNode<LexerTypes, ENonTerminal>;
-    using ASTNode = ASTNode<LexerTypes, ENonTerminal>;
 };

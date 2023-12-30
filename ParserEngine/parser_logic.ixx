@@ -239,8 +239,8 @@ public:
 template <typename T>
 concept IsParser = requires(T t)
 {
-	[] <CEParserSymbol EParserSymbol, CLexerTypes LexerTypes, int num_states, int num_keywords, int max_prod_len, int num_productions>
-		(Parser<EParserSymbol, LexerTypes, num_states, num_keywords, max_prod_len, num_productions>&) {}(t);
+	[] <CParserTypes ParserTypes, CLexerTypes LexerTypes, int num_states, int num_keywords, int max_prod_len, int num_productions>
+		(Parser<ParserTypes, LexerTypes, num_states, num_keywords, max_prod_len, num_productions>&) {}(t);
 };
 
 export template <typename ostream>

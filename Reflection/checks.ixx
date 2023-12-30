@@ -12,7 +12,10 @@ static consteval auto to_oversized_array(std::string_view sv)
     };
 
     oversized_array result{};
-    std::copy(sv.begin(), sv.end(), result.data.begin());
+    for (std::size_t i = 0; i < sv.size(); ++i)
+    {
+		result.data[i] = sv[i];
+	}
     result.size = sv.size() + 1;
     return result;
 }

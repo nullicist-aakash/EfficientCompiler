@@ -28,6 +28,12 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)parser_logic.ixx">
       <Filter>Parser</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)ast_structures.ixx">
+      <Filter>AST</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)ast.ixx">
+      <Filter>Exports</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Lexer">
@@ -38,6 +44,9 @@
     </Filter>
     <Filter Include="Exports">
       <UniqueIdentifier>{a14c5db0-f0fb-44d2-940a-ee6ac58d9554}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AST">
+      <UniqueIdentifier>{3b0c28cb-c761-4214-978a-c2d873647ae7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

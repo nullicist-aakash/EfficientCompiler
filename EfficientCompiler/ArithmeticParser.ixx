@@ -43,13 +43,13 @@ struct ALexerToken
     {
         return type == ATerminal::WHITESPACE;
     }
-};
 
-export template <typename T>
-constexpr T& operator<<(T& out, const ALexerToken& tk)
-{
-    return out << "{ type: " << tk.type << ", lexeme: '" << tk.lexeme << "' }";
-}
+    template <typename T>
+    friend constexpr T& operator<<(T& out, const ALexerToken& tk)
+    {
+        return out << "{ type: " << tk.type << ", lexeme: '" << tk.lexeme << "' }";
+    }
+};
 
 static consteval auto get_Alexer()
 {

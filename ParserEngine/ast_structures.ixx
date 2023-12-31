@@ -18,23 +18,22 @@ struct ASTNode
 
     std::vector<std::unique_ptr<ASTNode>> descendants{};
 
-    ASTNode() = default;
+    constexpr ASTNode() = default;
 
-    ASTNode(ParseTreeNode<LexerTypes, ENonTerminal>* ptnode) :
+    constexpr ASTNode(ParseTreeNode<LexerTypes, ENonTerminal>* ptnode) :
         node_symbol_type{ ptnode->node_type },
         lexer_token { nullptr }
     {
 
     }
 
-    ASTNode(LeafType leaf) :
+    constexpr ASTNode(LeafType leaf) :
         node_symbol_type{ std::get<ETerminal>(leaf->type) },
         lexer_token{ std::move(leaf) }
     {
 
     }
 };
-
 
 export template <typename T>
 concept IsASTNode = requires(T t)

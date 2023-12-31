@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)ast.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)ast_logic.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)ast_structures.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)compiler.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)dfa_logic.ixx" />

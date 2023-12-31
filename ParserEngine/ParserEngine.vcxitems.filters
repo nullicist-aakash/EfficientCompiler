@@ -34,6 +34,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)ast.ixx">
       <Filter>Exports</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)ast_logic.ixx">
+      <Filter>AST</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Lexer">

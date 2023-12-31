@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)checks.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)constexpr_stream.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)constexpr_stream.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)extensions.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)extensions.ixx" />

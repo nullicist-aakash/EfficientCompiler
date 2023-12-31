@@ -3,6 +3,7 @@ export module compiler.parser:parser;
 import :structures;
 import :parse_table;
 import compiler.lexer;
+import helpers;
 
 import <string_view>;
 import <iostream>;
@@ -13,7 +14,6 @@ import <vector>;
 import <stack>;
 import <string>;
 import <variant>;
-import <sstream>;
 import <memory>;
 
 enum class ETokenConsumed
@@ -41,8 +41,8 @@ class ParserStack
 	ParseTreeNode* parent;
 	int child_index;
 
-	std::stringstream& log;
-	std::stringstream& err;
+	constexpr_stream& log;
+	constexpr_stream& err;
 
 	constexpr auto on_terminal_matched(CLexerToken auto& token)
 	{
@@ -203,9 +203,9 @@ public:
 	Lexer<LexerTypes, num_states, num_keywords> lexer{};
 	ParseTable<ParserTypes, max_prod_len, num_productions> parse_table{};
 
-	auto operator()(std::string_view source_code) const
+	constexpr auto operator()(std::string_view source_code) const
 	{
-		std::stringstream clog, cerr{};
+		constexpr_stream clog, cerr{};
 		ParserStack<ParserTypes> stack(clog, cerr);
 
 		for (auto token : lexer(source_code))
@@ -225,8 +225,8 @@ public:
 			clog << "Parser success: Parsing complete!\n";
 
 		ParserOutput output;
-		output.errors = std::move(cerr.str());
-		output.logs = std::move(clog.str());
+		output.errors = cerr.str();
+		output.logs = clog.str();
 
 		if (output.errors.empty())
 			output.root = std::move(stack.get_root());

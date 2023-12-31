@@ -65,7 +65,8 @@ consteval static bool test_nullptr()
 consteval static bool test_pointer()
 {
 	constexpr_stream stream{};
-	std::uint64_t address = 16;
+	void* ptr = nullptr;
+	stream << ptr;
 	// idk how to cast an address to void* in constexpr
 	// Maybe relevant: https://stackoverflow.com/questions/70543372/how-to-cast-from-const-void-in-a-constexpr-expression
 	return stream.sv() == "nullptr";

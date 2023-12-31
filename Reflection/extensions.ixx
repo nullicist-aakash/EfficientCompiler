@@ -58,9 +58,9 @@ consteval auto get_enum_array()
 }
 
 export template <CEnum Enum>
-constexpr std::string_view get_enum_string(Enum en)
+constexpr auto get_enum_string(Enum en)
 {
-    static auto mapping = get_enum_array<Enum>();
+    constexpr auto mapping = get_enum_array<Enum>();
     return mapping[(int)en];
 }
 

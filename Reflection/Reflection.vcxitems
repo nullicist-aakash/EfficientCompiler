@@ -16,8 +16,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)checks.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)constexpr_stream.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)extensions.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)extensions.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)flatmap.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)helpers.ixx" />
   </ItemGroup>
 </Project>

@@ -2,7 +2,7 @@ export module compiler.lexer:lexer;
 
 import :dfa;
 import :structures;
-import helpers.flatmap;
+import helpers;
 
 import <algorithm>;
 import <numeric>;

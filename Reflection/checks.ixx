@@ -1,4 +1,5 @@
-export module helpers.checks;
+export module helpers:checks;
+
 import <string_view>;
 import <array>;
 import <algorithm>;

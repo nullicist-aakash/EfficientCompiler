@@ -10,7 +10,7 @@ import <stdexcept>;
 import :structures;
 import compiler.lexer;
 import compiler.parser;
-import helpers.extensions;
+import helpers;
 
 using std::unique_ptr;
 

@@ -1,4 +1,4 @@
-export module helpers.flatmap;
+export module helpers:flatmap;
 import <cstdio>;
 import <array>;
 import <optional>;

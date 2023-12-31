@@ -1,4 +1,4 @@
-export module helpers.extensions;
+export module helpers:extensions;
 import <string_view>;
 import <array>;
 import <source_location>;

@@ -1,4 +1,4 @@
-module helpers.extensions;
+module helpers:extensions;
 
 // TESTING
 enum class TestEnum

@@ -8,7 +8,7 @@ import <variant>;
 import <ranges>;
 
 import compiler;
-import helpers.extensions;
+import helpers;
 
 using namespace std;
 

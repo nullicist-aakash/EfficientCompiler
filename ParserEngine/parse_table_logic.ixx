@@ -2,8 +2,7 @@ export module compiler.parser:parse_table;
 
 import :structures;
 import compiler.lexer;
-import helpers.flatmap;
-import helpers.extensions;
+import helpers;
 
 import <array>;
 import <algorithm>;

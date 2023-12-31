@@ -10,7 +10,7 @@ import <memory>;
 import <cassert>;
 
 import compiler;
-import helpers.extensions;
+import helpers;
 
 using namespace std;
 

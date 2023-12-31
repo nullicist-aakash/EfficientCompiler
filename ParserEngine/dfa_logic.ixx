@@ -1,8 +1,7 @@
 export module compiler.lexer:dfa;
 
 import :structures;
-import helpers.checks;
-import helpers.extensions;
+import helpers;
 import <algorithm>;
 import <array>;
 import <limits>;

@@ -185,7 +185,7 @@ public:
 	}
 };
 
-template <CParserTypes ParserTypes, CLexerTypes LexerTypes, int num_states, int num_keywords, int max_prod_len, int num_productions>
+template <CParserTypes ParserTypes, CLexerTypes LexerTypes, int num_states, int max_prod_len, int num_productions>
 class Parser
 {
 	using ETerminal = ParserTypes::ETerminal;
@@ -200,7 +200,7 @@ class Parser
 	};
 
 public:
-	Lexer<LexerTypes, num_states, num_keywords> lexer{};
+	Lexer<LexerTypes, num_states> lexer{};
 	ParseTable<ParserTypes, max_prod_len, num_productions> parse_table{};
 
 	constexpr auto operator()(std::string_view source_code) const
@@ -238,8 +238,8 @@ public:
 template <typename T>
 concept IsParser = requires(T t)
 {
-	[] <CParserTypes ParserTypes, CLexerTypes LexerTypes, int num_states, int num_keywords, int max_prod_len, int num_productions>
-		(Parser<ParserTypes, LexerTypes, num_states, num_keywords, max_prod_len, num_productions>&) {}(t);
+	[] <CParserTypes ParserTypes, CLexerTypes LexerTypes, int num_states, int max_prod_len, int num_productions>
+		(Parser<ParserTypes, LexerTypes, num_states, max_prod_len, num_productions>&) {}(t);
 };
 
 export template <typename ostream>
@@ -253,6 +253,6 @@ export consteval auto build_parser(auto production_callback, const auto& lexer)
 	return Parser
 	{
 		.lexer = lexer,
-		.parse_table = build_parse_table(production_callback, lexer.keyword_to_token)
+		.parse_table = build_parse_table(production_callback)
 	};
 }

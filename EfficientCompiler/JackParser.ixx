@@ -204,7 +204,7 @@ static consteval auto get_lexer()
                 FinalStateInfo{28, COMMENT},
             };
         };
-
+    /*
     constexpr auto keywords = []()
         {
             return array
@@ -232,8 +232,8 @@ static consteval auto get_lexer()
                 KeywordInfo{ "return", RETURN }
             };
         };
-
-    return build_lexer<LexerTypes<LexerToken>>(transitions, final_states, keywords);
+    */
+    return build_lexer<LexerTypes<LexerToken>>(transitions, final_states);
 }
 
 export consteval auto get_jack_parser()

@@ -228,7 +228,7 @@ consteval auto get_follow_sets(const auto& productions, const auto& nullable_set
     return follow_set;
 }
 
-export consteval auto build_parse_table(auto production_callback, auto keyword_to_token_map)
+export consteval auto build_parse_table(auto production_callback)
 {
     constexpr auto productions = production_callback();
     using ETerminal = typename std::remove_cvref_t<decltype(*productions.begin())>::ETerminal;
@@ -315,11 +315,6 @@ export consteval auto build_parse_table(auto production_callback, auto keyword_t
                 parser.parse_table[i][j] = -2;
         }
     }
-
-    for (auto& [_, keyword_token] : keyword_to_token_map)
-        for (int i = 0; i < parser.parse_table.size(); ++i)
-            if (auto& ref = parser.parse_table[i][(int)keyword_token]; ref == -1)
-                ref = -2;
 
     return parser;
 }

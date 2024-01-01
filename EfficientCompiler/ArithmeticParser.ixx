@@ -79,15 +79,7 @@ static consteval auto get_arithmetic_lexer()
             };
         };
 
-    constexpr auto keywords = []()
-        {
-            return array
-            {
-                KeywordInfo{ "ONE", NUMBER },
-            };
-        };
-
-    return build_lexer<LexerTypes<ALexerToken>>(transitions, final_states, keywords);
+    return build_lexer<LexerTypes<ALexerToken>>(transitions, final_states);
 }
 
 export consteval auto get_arithmetic_parser()

@@ -5,6 +5,7 @@ import helpers;
 import <algorithm>;
 import <array>;
 import <limits>;
+import <numeric>;
 import <ranges>;
 import <string_view>;
 import <type_traits>;
@@ -245,17 +246,23 @@ constexpr T& operator<<(T& out, const DFA<ELexerSymbol, num_states>& dfa)
     return out;
 }
 
-export template <CELexerSymbol ELexerSymbol, int num_states>
+export template <CELexerSymbol ELexerSymbol>
 consteval auto build_dfa(auto transition_callback, auto final_states_callback)
 {
     using ETerminal = std::variant_alternative_t<0, ELexerSymbol>;
     using ELexerError = std::variant_alternative_t<1, ELexerSymbol>;
 
-    constexpr auto& transitions = transition_callback();
-    constexpr auto& final_states = final_states_callback();
+    constexpr auto transitions = transition_callback();
+    constexpr auto final_states = final_states_callback();
 
     static_assert(std::is_same_v<TransitionInfo, std::remove_cvref_t<decltype(transitions[0])>>, "Transitions array doesn't contain type: TransitionInfo");
     static_assert(std::is_same_v<FinalStateInfo<ETerminal>, std::remove_cvref_t<decltype(final_states[0])>>, "Final states array doesn't contain type: FinalStateInfo<ETerminal>");
+
+    constexpr auto num_states = 1 + std::accumulate(transitions.begin(), transitions.end(), 0,
+        [](int ans, const auto& t) {
+            return std::max({ ans, t.from, t.to, t.default_transition_state });
+        }
+    );
 
     // We can directly use static_assert here once we have C++26.
     ct_assert([]() { return validate_transitions<num_states>(transitions); });

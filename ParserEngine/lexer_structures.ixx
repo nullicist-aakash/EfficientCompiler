@@ -13,7 +13,6 @@ export template<typename T>
 concept CETerminal = requires(T t)
 {
     requires std::is_enum_v<T>;
-    { T::IDENTIFIER };
     { T::eps };
     { T::TK_EOF };
 };
@@ -72,12 +71,5 @@ export template <CETerminal ETerminal>
 struct FinalStateInfo
 {
     int state_no;
-    ETerminal token_type;
-};
-
-export template <CETerminal ETerminal>
-struct KeywordInfo
-{
-    std::string_view keyword;
     ETerminal token_type;
 };

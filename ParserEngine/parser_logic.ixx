@@ -41,8 +41,8 @@ class ParserStack
 	ParseTreeNode* parent;
 	int child_index;
 
-	constexpr_stream& log;
-	constexpr_stream& err;
+	constexpr_ostream& log;
+	constexpr_ostream& err;
 
 	constexpr auto on_terminal_matched(CLexerToken auto& token)
 	{
@@ -205,7 +205,7 @@ public:
 
 	constexpr auto operator()(std::string_view source_code) const
 	{
-		constexpr_stream clog, cerr{};
+		constexpr_ostream clog, cerr{};
 		ParserStack<ParserTypes> stack(clog, cerr);
 
 		for (auto token : lexer(source_code))
@@ -225,8 +225,8 @@ public:
 			clog << "Parser success: Parsing complete!\n";
 
 		ParserOutput output;
-		output.errors = cerr.str();
-		output.logs = clog.str();
+		output.errors = cerr.sv();
+		output.logs = clog.sv();
 
 		if (output.errors.empty())
 			output.root = std::move(stack.get_root());

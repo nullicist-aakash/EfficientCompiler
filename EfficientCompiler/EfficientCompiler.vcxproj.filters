@@ -24,6 +24,9 @@
     <ClCompile Include="ArithmeticParser.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RegexParser.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="source.jack">

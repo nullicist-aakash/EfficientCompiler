@@ -137,6 +137,7 @@
     <ClCompile Include="ArithmeticParser.ixx" />
     <ClCompile Include="JackParser.ixx" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="RegexParser.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Update="C:\Users\Aakash\source\repos\EfficientCompiler\ParserEngine\dfa_logic.ixx">

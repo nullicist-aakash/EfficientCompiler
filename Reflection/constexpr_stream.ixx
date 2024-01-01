@@ -7,32 +7,33 @@ import <algorithm>;
 import <format>;
 import <memory>;
 import <bit>;
+import <vector>;
 
-export class constexpr_stream
+export class constexpr_ostream
 {
 	std::string output;
 public:
-	constexpr constexpr_stream() = default;
+	constexpr constexpr_ostream() = default;
 
-	constexpr constexpr_stream& operator<<(std::string_view str)
+	constexpr constexpr_ostream& operator<<(std::string_view str)
 	{
 		output += str;
 		return *this;
 	}
 
-	constexpr constexpr_stream& operator<<(const char* str)
+	constexpr constexpr_ostream& operator<<(const char* str)
 	{
 		output += str;
 		return *this;
 	}
 
-	constexpr constexpr_stream& operator<<(const char c)
+	constexpr constexpr_ostream& operator<<(const char c)
 	{
 		output += c;
 		return *this;
 	}
 
-	constexpr constexpr_stream& operator<<(std::signed_integral auto i)
+	constexpr constexpr_ostream& operator<<(std::signed_integral auto i)
 	{
 		if (i == std::numeric_limits<decltype(i)>::min())
 		{
@@ -66,7 +67,7 @@ public:
 		return *this;
 	}
 
-	constexpr constexpr_stream& operator<<(std::unsigned_integral auto i)
+	constexpr constexpr_ostream& operator<<(std::unsigned_integral auto i)
 	{
 		std::string digits{};
 		while (i)
@@ -81,20 +82,20 @@ public:
 		return *this;
 	}
 
-	constexpr constexpr_stream& operator<<(bool b)
+	constexpr constexpr_ostream& operator<<(const bool b)
 	{
 		output += b ? "true" : "false";
 		return *this;
 	}
 
-	constexpr constexpr_stream& operator<<(std::nullptr_t)
+	constexpr constexpr_ostream& operator<<(std::nullptr_t)
 	{
 		output += "nullptr";
 		return *this;
 	}
 
 	template <typename T>
-	constexpr constexpr_stream& operator<<(T* ptr)
+	constexpr constexpr_ostream& operator<<(const T* ptr)
 	{
 		if (ptr == nullptr)
 		{
@@ -122,7 +123,7 @@ public:
 	}
 
 	template <typename T>
-	constexpr constexpr_stream& operator<<(const std::unique_ptr<T>& t)
+	constexpr constexpr_ostream& operator<<(const std::unique_ptr<T>& t)
 	{
 		return *this << t.get();
 	}
@@ -135,5 +136,84 @@ public:
 	constexpr auto sv() const -> std::string_view
 	{
 		return output;
+	}
+};
+
+export class constexpr_iostream
+{
+	int start_index = -1;
+	std::vector<std::string> input;
+
+	constexpr std::string& pop_front()
+	{
+		if (start_index == input.size() - 1)
+			throw "No more data found";
+		return input[++start_index];
+	}
+
+	constexpr auto str_to_uint64(std::string_view str) const -> std::uint64_t
+	{
+		std::uint64_t result = 0;
+		for (auto c : str)
+		{
+			if (c < '0' || c > '9')
+				throw "Invalid character found in input stream";
+
+			result *= 10;
+			result += (std::uint8_t)(c - '0');
+		}
+
+		return result;
+	}
+
+public:
+	constexpr constexpr_iostream() = default;
+
+	template <typename T>
+	constexpr auto& operator<<(T&& t)
+	{
+		constexpr_ostream stream{};
+		stream << t;
+		input.emplace_back(stream.str());
+		return *this;
+	}
+
+	constexpr auto& operator>>(bool& b)
+	{
+		b = pop_front() == "true";
+		return *this;
+	}
+
+	constexpr auto& operator>>(std::string& str)
+	{
+		str = pop_front();
+		return *this;
+	}
+
+	constexpr auto& operator>>(std::unsigned_integral auto& i)
+	{
+		std::uint64_t result = str_to_uint64(pop_front());
+
+		using itype = std::remove_cvref_t<decltype(i)>;
+
+		if (result < std::numeric_limits<itype>::min() || result > std::numeric_limits<itype>::max())
+			throw "Integer overflow";
+
+		i = static_cast<itype>(result);
+		return *this;
+	}
+
+	constexpr auto& operator>>(std::signed_integral auto& i)
+	{
+		auto str = std::string_view(pop_front());
+		uint64_t result = str_to_uint64(str[0] == '-' ? str.substr(1) : str);
+
+		using itype = std::remove_cvref_t<decltype(i)>;
+
+		i = static_cast<itype>(result);
+		if (str[0] == '-')
+			i = -i;
+
+		return *this;
 	}
 };

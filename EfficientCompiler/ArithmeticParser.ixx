@@ -80,7 +80,7 @@ static consteval auto get_arithmetic_lexer()
 
     return build_lexer<LexerTypes<ALexerToken>>(transitions, final_states);
 }
-
+/*
 export consteval auto get_arithmetic_parser()
 {
     using enum ANonTerminal;
@@ -148,4 +148,4 @@ constexpr auto get_arithmetic_ast(std::unique_ptr<ParseNodeType> parse_tree)
         P{ ANonTerminal::start, start_parser{} },
         P{ ANonTerminal::expression, expression_parser{} }
     ).visit<ParseNodeType, ASTNodeType>(std::move(parse_tree));
-}
+}*/

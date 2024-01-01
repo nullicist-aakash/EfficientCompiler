@@ -248,11 +248,11 @@ constexpr ostream& operator<<(ostream& out, const IsParser auto& parser)
     return out << parser.lexer << "\n" << parser.parse_table;
 }
 
-export consteval auto build_parser(auto production_callback, const auto& lexer)
+export constexpr auto build_parser(auto production_callback, auto lexer_callback)
 {
 	return Parser
 	{
-		.lexer = lexer,
+		.lexer = lexer_callback(),
 		.parse_table = build_parse_table(production_callback)
 	};
 }

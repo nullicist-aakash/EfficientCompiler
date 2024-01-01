@@ -3,15 +3,8 @@ import ArithmeticParser;
 import RegexParser;
 
 #include <fstream>
-#include <iostream>
-#include <numeric>
-#include <set>
 #include <sstream>
-#include <utility>
-#include <memory>
-#include <cassert>
-#include <functional>
-#include <stdexcept>
+#include <iostream>
 
 using namespace std;
 
@@ -25,5 +18,6 @@ static auto read_file(string_view filename)
 
 int main()
 {
-	auto lxr = RegexParser::get_lexer();
+	constexpr auto parser = RegexParser::get_parser();
+	cout << parser << endl;
 }

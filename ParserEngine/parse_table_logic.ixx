@@ -55,7 +55,8 @@ constexpr ostream& operator<<(ostream& out, const IsParseTable auto& pt)
     for (auto [prod_index, prod] : pt.productions | std::views::enumerate)
     {
         out << prod_index << ". " << prod.start << " -> ";
-        std::copy(prod.production.begin(), prod.production.begin() + prod.size, std::ostream_iterator<EParserSymbol>(out, " "));
+        for (auto& x : prod.production | std::views::take(prod.size))
+            out << x << " ";
     	out << '\n';
     }
     out << R"(

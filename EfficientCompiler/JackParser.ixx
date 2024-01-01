@@ -235,7 +235,7 @@ static consteval auto get_lexer()
     */
     return build_lexer<LexerTypes<LexerToken>>(transitions, final_states);
 }
-
+/*
 export consteval auto get_jack_parser()
 {
     using enum NonTerminal;
@@ -323,4 +323,4 @@ export consteval auto get_jack_parser()
         PI(more_expressions, COMMA, expression, more_expressions),
         PI(more_expressions, eps),
         }; }, get_lexer());
-}
+}*/

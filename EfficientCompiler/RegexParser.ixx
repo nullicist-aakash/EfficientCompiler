@@ -22,19 +22,20 @@ namespace RegexParser
         TK_EOF,
 
         CHAR,
+        DOT,
         EMPTY,
 
         OR,
-        STAR,
-        PLUS,
-        DOT,
 
         BRACKET_OPEN,
         BRACKET_CLOSE,
         CLASS_OPEN,
         CLASS_CLOSE,
 
+        STAR,
+        PLUS,
         QUESTION_MARK,
+
         CARET,
         MINUS,
 
@@ -43,7 +44,18 @@ namespace RegexParser
 
     enum class NonTerminal
     {
-        start
+        start,
+        regex,
+        terms_continue,
+        term,
+        factors_continue,
+        factor,
+        factor_core,
+        factor_suffix,
+        _class,
+        // These following 2 names have no meaning, the names were chosen based on dfa on paper
+        class_mid,
+        class_end
     };
 
     struct LexerToken
@@ -68,7 +80,7 @@ namespace RegexParser
         }
     };
 
-    export constexpr auto get_lexer()
+    constexpr auto get_lexer()
     {
         using enum Terminal;
 
@@ -76,7 +88,7 @@ namespace RegexParser
             {
                 return array
                 {
-                    TransitionInfo{.from = 0, .to = -1, .pattern = "|()*+[]-^?.\\", .default_transition_state = 1 },
+                    TransitionInfo{.from = 0, .to = -1, .pattern = R"(|()*+[]-^?.\)", .default_transition_state = 1 },
                     TransitionInfo{0, 2, "|"},
                     TransitionInfo{0, 3, "("},
                     TransitionInfo{0, 4, ")"},
@@ -88,8 +100,8 @@ namespace RegexParser
                     TransitionInfo{0, 10, "^"},
                     TransitionInfo{0, 11, "?"},
                     TransitionInfo{0, 12, "."},
-                    TransitionInfo{0, 13, "\\"},
-                    TransitionInfo{13, 14, "|()*+[]-^?.\\"},
+                    TransitionInfo{0, 13, R"(\)"},
+                    TransitionInfo{13, 14, R"(|()*+[]-^?.\nrt)"},
                     TransitionInfo{13, 15, "e"},
                 };
             };
@@ -117,5 +129,52 @@ namespace RegexParser
             };
 
         return build_lexer<LexerTypes<LexerToken>>(transitions, final_states);
+    }
+
+    export constexpr auto get_parser()
+    {
+        using enum NonTerminal;
+        using enum Terminal;
+        using PI = ProductionInfo<LexerTypes<LexerToken>, NonTerminal, 30>;
+
+        return build_parser([]() 
+            {
+                return array
+                {
+                    PI(start, regex, TK_EOF),
+                    PI(regex, term, terms_continue),
+                    
+                    PI(terms_continue, eps),
+                    PI(terms_continue, OR, term, terms_continue),
+                    
+                    PI(term, factor, factors_continue),
+                    
+                    PI(factors_continue, eps),
+                    PI(factors_continue, factor, factors_continue),
+                    
+                    PI(factor, CHAR),
+                    
+                    PI(factor_core, CHAR),
+                    PI(factor_core, DOT),
+                    PI(factor_core, EMPTY),
+                    PI(factor_core, BRACKET_OPEN, regex, BRACKET_CLOSE),
+                    PI(factor_core, CLASS_OPEN, _class, CLASS_CLOSE),
+                    
+                    PI(factor_suffix, eps),
+                    PI(factor_suffix, STAR),
+                    PI(factor_suffix, PLUS),
+                    PI(factor_suffix, QUESTION_MARK),
+                    
+                    PI(_class, CHAR, class_mid),
+                    PI(_class, CARET, class_end),
+                    
+                    PI(class_mid, CHAR, class_mid),
+                    PI(class_mid, MINUS, CHAR, class_end),
+                    PI(class_mid, eps),
+
+                    PI(class_end, CHAR, class_mid),
+                    PI(class_end, eps)
+                };
+            }, []() { return get_lexer(); });
     }
 }

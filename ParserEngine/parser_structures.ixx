@@ -106,6 +106,13 @@ struct ProductionInfo
     }
 };
 
+export template <typename T>
+concept IsProductionInfo = requires(T t)
+{
+    []<CLexerTypes LexerTypes, CENonTerminal ENonTerminal, int max_prod_len>
+        (ProductionInfo<LexerTypes, ENonTerminal, max_prod_len>&) {}(t);
+};
+
 // Parser types
 export template <typename T>
 concept CParserTypes = requires()

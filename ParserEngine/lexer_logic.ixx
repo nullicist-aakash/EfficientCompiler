@@ -120,9 +120,9 @@ constexpr ostream& operator<<(ostream& out, const IsLexer auto& lexer)
 }
 
 export template <CLexerTypes LexerTypes>
-consteval auto build_lexer(auto transition_callback, auto final_states_callback)
+constexpr auto build_lexer(auto transition_callback, auto final_states_callback)
 {
-    constexpr auto dfa = build_dfa<LexerTypes::ELexerSymbol>(transition_callback, final_states_callback);
+    auto dfa = build_dfa<LexerTypes::ELexerSymbol>(transition_callback, final_states_callback);
    
     return Lexer<LexerTypes, dfa.state_count>{ dfa };
 }

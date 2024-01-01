@@ -89,7 +89,7 @@ NonTerminal :: Sync Set Terminal
 }
 
 template <CEParserSymbol EParserSymbol>
-consteval auto get_nullable_set(const auto& productions)
+constexpr auto get_nullable_set(const auto& productions)
 {
     using ETerminal = std::variant_alternative_t<0, EParserSymbol>;
     using ENonTerminal = std::variant_alternative_t<1, EParserSymbol>;
@@ -120,7 +120,7 @@ consteval auto get_nullable_set(const auto& productions)
 }
 
 template <CEParserSymbol EParserSymbol>
-consteval auto get_first_sets(const auto& productions, const auto& nullable_set)
+constexpr auto get_first_sets(const auto& productions, const auto& nullable_set)
 {
     using ETerminal = std::variant_alternative_t<0, EParserSymbol>;
     using ENonTerminal = std::variant_alternative_t<1, EParserSymbol>;
@@ -170,7 +170,7 @@ consteval auto get_first_sets(const auto& productions, const auto& nullable_set)
 }
 
 template <CEParserSymbol EParserSymbol>
-consteval auto get_follow_sets(const auto& productions, const auto& nullable_set, const auto& first_set)
+constexpr auto get_follow_sets(const auto& productions, const auto& nullable_set, const auto& first_set)
 {
     using ETerminal = std::variant_alternative_t<0, EParserSymbol>;
     using ENonTerminal = std::variant_alternative_t<1, EParserSymbol>;
@@ -228,7 +228,7 @@ consteval auto get_follow_sets(const auto& productions, const auto& nullable_set
     return follow_set;
 }
 
-export consteval auto build_parse_table(auto production_callback)
+export constexpr auto build_parse_table(auto production_callback)
 {
     constexpr auto productions = production_callback();
     using ETerminal = typename std::remove_cvref_t<decltype(*productions.begin())>::ETerminal;

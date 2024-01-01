@@ -106,25 +106,26 @@ struct DFA
 };
 
 template <int num_states>
-consteval auto validate_transitions(const auto& transitions)
+constexpr auto validate_transitions(const auto& transitions)
 {
+    // Repeatability
     std::vector<int> def_val(num_states + 1, -1);
     for (int i = 0; i < transitions.size(); ++i)
     {
         auto& a = transitions[i];
 
         if (a.from < 0)
-            return "Start state can't be less than 0";
+            throw "Start state can't be less than 0";
 
         if (a.to < -1)
-            return "End state can't be less than -1";
+            throw "End state can't be less than -1";
 
         if (a.default_transition_state != -1)
         {
             if (def_val[a.from] == -1)
                 def_val[a.from] = a.default_transition_state;
             else if (def_val[a.from] != a.default_transition_state)
-                return "Multiple default values found that emerge from a state";
+                throw "Multiple default values found that emerge from a state";
         }
 
         for (int j = i + 1; j < transitions.size(); ++j)
@@ -132,14 +133,17 @@ consteval auto validate_transitions(const auto& transitions)
             auto& b = transitions[j];
 
             if (a.from == b.from && a.to == b.to)
-                return "Multiple transitions specified with same 'from' and 'to'";
+                throw "Multiple transitions specified with same 'from' and 'to'";
         }
     }
 
     // Reachability
     std::vector<std::vector<int>> adj(num_states);
     for (auto& t : transitions)
+    {
         adj[t.from].push_back(t.to);
+        adj[t.from].push_back(t.default_transition_state);
+    }
 
     std::vector<bool> visited(num_states, false);
     int count_visited = 0;
@@ -161,13 +165,13 @@ consteval auto validate_transitions(const auto& transitions)
     }
 
     if (count_visited != num_states)
-        return "Not all states are reachable";
+        throw "Not all states are reachable";
 
     return "";
 }
 
 template <int num_states>
-consteval auto validate_final_states(const auto& final_states)
+constexpr auto validate_final_states(const auto& final_states)
 {
     for (auto& f : final_states)
         if (f.state_no < 0 || f.state_no > num_states)
@@ -247,7 +251,7 @@ constexpr T& operator<<(T& out, const DFA<ELexerSymbol, num_states>& dfa)
 }
 
 export template <CELexerSymbol ELexerSymbol>
-consteval auto build_dfa(auto transition_callback, auto final_states_callback)
+constexpr auto build_dfa(auto transition_callback, auto final_states_callback)
 {
     using ETerminal = std::variant_alternative_t<0, ELexerSymbol>;
     using ELexerError = std::variant_alternative_t<1, ELexerSymbol>;
@@ -265,8 +269,8 @@ consteval auto build_dfa(auto transition_callback, auto final_states_callback)
     );
 
     // We can directly use static_assert here once we have C++26.
-    ct_assert([]() { return validate_transitions<num_states>(transitions); });
-    ct_assert([]() { return validate_final_states<num_states>(final_states); });
+    validate_transitions<num_states>(transitions);
+    validate_final_states<num_states>(final_states);
 
     DFA<ELexerSymbol, num_states> dfa;
 

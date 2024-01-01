@@ -17,7 +17,6 @@ using namespace std;
 enum class ATerminal
 {
     eps,
-    IDENTIFIER,
     TK_EOF,
 
     NUMBER,

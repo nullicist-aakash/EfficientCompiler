@@ -77,6 +77,22 @@ consteval auto get_enum_size()
 	return get_enum_array<Enum>().size();
 }
 
+template <typename T, typename... Ts>
+struct unique { using type = T; };
+
+template <typename... Ts, typename U, typename... Us>
+struct unique<std::variant<Ts...>, U, Us...>
+    : std::conditional_t<(std::is_same_v<U, Ts> || ...),
+    unique<std::variant<Ts...>, Us...>,
+    unique<std::variant<Ts..., U>, Us...>> {};
+
+export template <typename... Ts>
+using variant_unique = typename unique<
+    std::variant<>,
+    std::conditional_t<std::is_same_v<Ts, void>, std::monostate, Ts>...>::type;
+
+
+
 export template <typename ostream, typename A, typename... Types>
 constexpr ostream& operator<<(ostream& out, const std::variant<A, Types...>& vr)
 {

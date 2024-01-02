@@ -14,11 +14,9 @@ import helpers;
 
 using std::unique_ptr;
 
-template<int array_size, typename... Types>
+template<typename vtype, int array_size>
 class ASTVisitor
 {
-	using vtype = std::variant<Types...>;
-
 	template <IsParseTreeNode ptn, IsASTNode astn>
 	constexpr auto visitor(unique_ptr<ptn> node, unique_ptr<astn> inherited) const -> unique_ptr<astn>
 	{
@@ -57,24 +55,24 @@ public:
 export template<CENonTerminal ENonTerminal, typename... Types>
 constexpr auto build_visitor(std::pair<ENonTerminal, Types> ...args)
 {
-	using vtype = std::variant<Types...>;
+	using vtype = variant_unique<Types...>;
 
 	constexpr auto array_size = get_enum_size<ENonTerminal>();
-	std::vector<std::pair<ENonTerminal, vtype>> arr{ args... };
+	std::vector arr{ args... };
 
 	std::array<vtype, array_size> m_visitors;
 	std::array<int, array_size> counts{};
 
 	for (auto& [key, value] : arr)
 		m_visitors[static_cast<int>(key)] = value, counts[static_cast<int>(key)]++;
-
+	
 	for (auto& x : counts)
 		if (x == 0)
 			throw std::runtime_error("Mapping of visitor not found for atleast one Non Terminal.");
 		else if (x > 1)
 			throw std::runtime_error("There exist atleas two mappings for single Non Terminal.");
-
-	return ASTVisitor<array_size, Types...> {
+	
+	return ASTVisitor<vtype, array_size> {
 		.m_visitors = m_visitors
 	};
 }

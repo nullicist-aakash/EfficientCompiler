@@ -222,14 +222,12 @@ public:
 		if (!stack.empty())
 			cerr << "Parser error: No more tokens but parsing still left!\n";
 		else
-			clog << "Parser success: Parsing complete!\n";
+			clog << "Parser: Parsing complete\n";
 
 		ParserOutput output;
 		output.errors = cerr.sv();
 		output.logs = clog.sv();
-
-		if (output.errors.empty())
-			output.root = std::move(stack.get_root());
+		output.root = std::move(stack.get_root());
 
 		return output;
 	}

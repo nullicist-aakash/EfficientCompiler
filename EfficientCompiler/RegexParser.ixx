@@ -65,7 +65,23 @@ namespace RegexParser
 
         constexpr void after_construction(const LexerToken& previous_token)
         {
+            if (type != Terminal::ESCAPED_CHAR)
+                return;
+            
+            lexeme = lexeme.substr(1);
+            type = Terminal::CHAR;
 
+            if (lexeme[0] == 'e')
+            {
+                type = Terminal::EMPTY;
+                lexeme = "";
+            }
+            else if (lexeme[0] == 'n')
+                lexeme = "\n";
+            else if (lexeme[0] == 'r')
+                lexeme = "\r";
+            else if (lexeme[0] == 't')
+                lexeme = "\t";
         }
 
         constexpr bool discard() const
@@ -152,7 +168,7 @@ namespace RegexParser
                     PI(factors_continue, eps),
                     PI(factors_continue, factor, factors_continue),
                     
-                    PI(factor, CHAR),
+                    PI(factor, factor_core, factor_suffix),
                     
                     PI(factor_core, CHAR),
                     PI(factor_core, DOT),
@@ -176,5 +192,42 @@ namespace RegexParser
                     PI(class_end, eps)
                 };
             }, []() { return get_lexer(); });
+    }
+}
+
+namespace RegexParser
+{
+    struct start_parser
+    {
+        template <IsParseTreeNode ptn, IsASTNode astn>
+        static constexpr auto to_ast(auto converter, unique_ptr<ptn> node, unique_ptr<astn> inherited) -> unique_ptr<astn>
+        {
+            return std::make_unique<astn>(node->descendants[0]);
+        }
+    };
+
+    template <typename T>
+    using P = std::pair<NonTerminal, T>;
+
+    export template <IsParseTreeNode ParseNodeType>
+        constexpr auto get_ast(std::unique_ptr<ParseNodeType> parse_tree)
+    {
+        using LexerTypes = typename ParseNodeType::LexerTypes;
+        using ENonTerminal = typename ParseNodeType::ENonTerminal;
+        using ASTNodeType = ASTNode<LexerTypes, ENonTerminal>;
+        
+        return build_visitor(
+            P{ NonTerminal::start, start_parser{} },
+            P{ NonTerminal::regex, start_parser{} },
+            P{ NonTerminal::terms_continue, start_parser{} },
+            P{ NonTerminal::term, start_parser{} },
+            P{ NonTerminal::factors_continue, start_parser{} },
+            P{ NonTerminal::factor, start_parser{} },
+            P{ NonTerminal::factor_core, start_parser{} },
+            P{ NonTerminal::factor_suffix, start_parser{} },
+            P{ NonTerminal::_class, start_parser{} },
+            P{ NonTerminal::class_mid, start_parser{} },
+            P{ NonTerminal::class_end, start_parser{} }
+        ).visit<ParseNodeType, ASTNodeType>(std::move(parse_tree));
     }
 }

@@ -26,6 +26,7 @@ namespace RegexParser
         EMPTY,
 
         OR,
+        CONCAT, // only for AST purposes
 
         BRACKET_OPEN,
         BRACKET_CLOSE,
@@ -96,7 +97,7 @@ namespace RegexParser
         }
     };
 
-    constexpr auto get_lexer()
+    export constexpr auto get_lexer()
     {
         using enum Terminal;
 
@@ -202,7 +203,156 @@ namespace RegexParser
         template <IsParseTreeNode ptn, IsASTNode astn>
         static constexpr auto to_ast(auto converter, unique_ptr<ptn> node, unique_ptr<astn> inherited) -> unique_ptr<astn>
         {
-            return std::make_unique<astn>(node->descendants[0]);
+            return converter(node->extract_child_node(0), nullptr);
+        }
+    };
+
+    struct regex_parser
+    {
+        template <IsParseTreeNode ptn, IsASTNode astn>
+        static constexpr auto to_ast(auto converter, unique_ptr<ptn> node, unique_ptr<astn> inherited) -> unique_ptr<astn>
+        {
+            // regex -> term terms_continue
+            return converter(node->extract_child_node(1), converter(node->extract_child_node(0), nullptr));
+        }
+    };
+
+    struct terms_continue_parser
+    {
+        template <IsParseTreeNode ptn, IsASTNode astn>
+        static constexpr auto to_ast(auto converter, unique_ptr<ptn> node, unique_ptr<astn> inherited) -> unique_ptr<astn>
+        {
+            if (node->descendants.size() == 0)
+                return std::move(inherited);
+
+            // tc -> OR term tc
+            auto root = std::make_unique<astn>(node->extract_child_leaf(0));
+
+            if (inherited->node_symbol_type == Terminal::OR)
+                root = std::move(inherited);
+            else
+                root->descendants.push_back(std::move(inherited));
+
+            root->descendants.push_back(converter(node->extract_child_node(1), nullptr));
+
+            return converter(node->extract_child_node(2), std::move(root));
+        }
+    };
+
+    struct term_parser : regex_parser {};
+
+    struct factors_continue_parser
+    {
+        template <IsParseTreeNode ptn, IsASTNode astn>
+        static constexpr auto to_ast(auto converter, unique_ptr<ptn> node, unique_ptr<astn> inherited) -> unique_ptr<astn>
+        {
+            if (node->descendants.size() == 0)
+                return std::move(inherited);
+
+            // factors_continue => factor factors_continue
+            auto root = std::make_unique<astn>(Terminal::CONCAT);
+
+            if (inherited->node_symbol_type == Terminal::CONCAT)
+                root = std::move(inherited);
+            else
+                root->descendants.push_back(std::move(inherited));
+
+            root->descendants.push_back(converter(node->extract_child_node(0), nullptr));
+
+            return converter(node->extract_child_node(1), std::move(root));
+        }
+    };
+
+    struct factor_parser : regex_parser {};
+
+    struct factor_core_parser
+    {
+        template <IsParseTreeNode ptn, IsASTNode astn>
+        static constexpr auto to_ast(auto converter, unique_ptr<ptn> node, unique_ptr<astn> inherited) -> unique_ptr<astn>
+        {
+            // factor_core -> CHAR
+            // factor_core -> DOT
+            // factor_core -> EMPTY
+            if (node->descendants.size() == 1)
+                return std::make_unique<astn>(node->extract_child_leaf(0));
+
+            // factor_core -> ( regex )
+            // factor_core -> [ class ]
+            return converter(node->extract_child_node(1), nullptr);
+        }
+    };
+
+    struct factor_suffix_parser
+    {
+        template <IsParseTreeNode ptn, IsASTNode astn>
+        static constexpr auto to_ast(auto converter, unique_ptr<ptn> node, unique_ptr<astn> inherited) -> unique_ptr<astn>
+        {
+            // factor_suffix -> eps
+            if (node->descendants.size() == 0)
+                return std::move(inherited);
+
+            // factor_suffix -> STAR
+            // factor_suffix -> PLUS
+            // factor_suffix -> QUESTION_MARK
+            auto root = std::make_unique<astn>(node->extract_child_leaf(0));
+            root->descendants.push_back(std::move(inherited));
+            return root;
+        }
+    };
+
+    struct class_parser
+    {
+        template <IsParseTreeNode ptn, IsASTNode astn>
+        static constexpr auto to_ast(auto converter, unique_ptr<ptn> node, unique_ptr<astn> inherited) -> unique_ptr<astn>
+        {
+            // _class => CHAR class_mid
+            // _class => CARET class_end
+            auto root = std::make_unique<astn>(NonTerminal::_class);
+            root->descendants.push_back(node->extract_child_leaf(0));
+            return converter(node->extract_child_node(1), std::move(root));
+        }
+    };
+
+    struct class_mid_parser
+    {
+        template <IsParseTreeNode ptn, IsASTNode astn>
+        static constexpr auto to_ast(auto converter, unique_ptr<ptn> node, unique_ptr<astn> inherited) -> unique_ptr<astn>
+        {
+            // class_mid => CHAR class_mid
+            // class_mid => MINUS CHAR class_end
+            // class_mid => eps
+
+            if (node->descendants.size() == 0)
+                return std::move(inherited);
+
+            if (node->descendants.size() == 2)
+			{
+                inherited->descendants.push_back(node->extract_child_leaf(0));
+                return converter(node->extract_child_node(1), std::move(inherited));
+			}
+
+            auto child_root = std::make_unique<astn>(Terminal::MINUS);
+            child_root->descendants.push_back(std::move(inherited->descendants.back()));
+            inherited->descendants.pop_back();
+			
+            child_root->descendants.push_back(node->extract_child_leaf(1));
+			inherited->descendants.push_back(std::move(child_root));
+			return converter(node->extract_child_node(2), std::move(inherited));
+        }
+    };
+
+    struct class_end_parser
+    {
+        template <IsParseTreeNode ptn, IsASTNode astn>
+        static constexpr auto to_ast(auto converter, unique_ptr<ptn> node, unique_ptr<astn> inherited) -> unique_ptr<astn>
+        {
+            // class_end => CHAR class_mid
+            // class_end => eps
+            if (node->descendants.size() == 0)
+				return std::move(inherited);
+
+            inherited->descendants.push_back(node->extract_child_leaf(0));
+            return converter(node->extract_child_node(1), std::move(inherited));
         }
     };
 
@@ -215,19 +365,19 @@ namespace RegexParser
         using LexerTypes = typename ParseNodeType::LexerTypes;
         using ENonTerminal = typename ParseNodeType::ENonTerminal;
         using ASTNodeType = ASTNode<LexerTypes, ENonTerminal>;
-        
+
         return build_visitor(
             P{ NonTerminal::start, start_parser{} },
-            P{ NonTerminal::regex, start_parser{} },
-            P{ NonTerminal::terms_continue, start_parser{} },
-            P{ NonTerminal::term, start_parser{} },
-            P{ NonTerminal::factors_continue, start_parser{} },
-            P{ NonTerminal::factor, start_parser{} },
-            P{ NonTerminal::factor_core, start_parser{} },
-            P{ NonTerminal::factor_suffix, start_parser{} },
-            P{ NonTerminal::_class, start_parser{} },
-            P{ NonTerminal::class_mid, start_parser{} },
-            P{ NonTerminal::class_end, start_parser{} }
+            P{ NonTerminal::regex, regex_parser{} },
+            P{ NonTerminal::terms_continue, terms_continue_parser{} },
+            P{ NonTerminal::term, term_parser{} },
+            P{ NonTerminal::factors_continue, factors_continue_parser{} },
+            P{ NonTerminal::factor, factor_parser{} },
+            P{ NonTerminal::factor_core, factor_core_parser{} },
+            P{ NonTerminal::factor_suffix, factor_suffix_parser{} },
+            P{ NonTerminal::_class, class_parser{} },
+            P{ NonTerminal::class_mid, class_mid_parser{} },
+            P{ NonTerminal::class_end, class_end_parser{} }
         ).visit<ParseNodeType, ASTNodeType>(std::move(parse_tree));
     }
 }

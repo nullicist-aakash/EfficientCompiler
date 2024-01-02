@@ -58,7 +58,7 @@ constexpr auto build_visitor(std::pair<ENonTerminal, Types> ...args)
 	using vtype = variant_unique<Types...>;
 
 	constexpr auto array_size = get_enum_size<ENonTerminal>();
-	std::vector arr{ args... };
+	std::vector<std::pair<ENonTerminal, vtype>> arr{ args... };
 
 	std::array<vtype, array_size> m_visitors;
 	std::array<int, array_size> counts{};

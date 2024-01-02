@@ -16,9 +16,9 @@ static auto read_file(string_view filename)
 
 int main()
 {
-	constexpr auto parser = RegexParser::get_parser();
+	auto parser = RegexParser::get_parser();
 	cout << parser << endl;
-	auto result = parser(R"([A-Z]\?)");
+	auto result = parser(R"(abc|def)");
 	cout << result.errors << endl;
 	cout << result.logs << endl;
 	if (result.root)

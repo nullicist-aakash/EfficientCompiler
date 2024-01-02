@@ -1,5 +1,5 @@
 export module JackParser;
-
+/*
 import <algorithm>;
 import <array>;
 import <string_view>;
@@ -151,7 +151,7 @@ static consteval auto get_lexer()
                 TransitionInfo{.from = 25, .to = -1, .pattern = "\n", .default_transition_state = 25 },
                 TransitionInfo{13, 26, "*"},
                 TransitionInfo{.from = 26, .to = -1, .pattern = "*", .default_transition_state = 26 },
-                TransitionInfo{.from = 27, .to = -1, .pattern = "*/", .default_transition_state = 26 },
+                TransitionInfo{.from = 27, .to = -1, .pattern = "/*", .default_transition_state = 26 },
                 TransitionInfo{26, 27, "*"},
                 TransitionInfo{27, 27, "*"},
                 TransitionInfo{27, 28, "/" },
@@ -167,7 +167,7 @@ static consteval auto get_lexer()
                 TransitionInfo{.from = 21, .to = -1, .pattern = "\r\n\"", .default_transition_state = 21 },
                 TransitionInfo{21, 22, "\""},
                 TransitionInfo{0, 23, "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPLKJHGFDSAZXCVBNM_"},
-                TransitionInfo{23, 23, "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_1234567890*/"},
+                TransitionInfo{23, 23, "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_1234567890/*"},
                 TransitionInfo{0, 24, " \r\t\n"},
                 TransitionInfo{24, 24, " \r\t\n"},
             };
@@ -232,7 +232,7 @@ static consteval auto get_lexer()
                 KeywordInfo{ "return", RETURN }
             };
         };
-    */
+    *
     return build_lexer<LexerTypes<LexerToken>>(transitions, final_states);
 }
 /*

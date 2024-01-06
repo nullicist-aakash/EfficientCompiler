@@ -1,5 +1,6 @@
 export module compiler.ast:structures;
 
+import helpers;
 import compiler.lexer;
 import compiler.parser;
 import <memory>;
@@ -30,6 +31,30 @@ struct ASTNode
         lexer_token{ std::move(leaf) }
     {
 
+    }
+
+    template<typename ostream>
+    constexpr friend ostream& operator<<(ostream& os, const ASTNode& node)
+    {
+        node.print(os, 0);
+        return os;
+    }
+
+private:
+
+    template<typename ostream>
+    constexpr void print(ostream& os, int depth = 0) const
+    {
+        for (int i = 0; i < depth; ++i) os << "\t";
+        os << node_symbol_type << ": "; 
+        
+        if (lexer_token) 
+            os << *lexer_token;
+        os << '\n';
+        
+        for (const auto& descendant : descendants)
+            if (descendant)
+                descendant->print(os, depth + 1);
     }
 };
 

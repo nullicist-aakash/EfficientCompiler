@@ -308,7 +308,7 @@ namespace RegexParser
             // _class => CHAR class_mid
             // _class => CARET class_end
             auto root = std::make_unique<astn>(NonTerminal::_class);
-            root->descendants.push_back(node->extract_child_leaf(0));
+            root->descendants.emplace_back(std::make_unique<astn>(node->extract_child_leaf(0)));
             return converter(node->extract_child_node(1), std::move(root));
         }
     };
@@ -327,7 +327,7 @@ namespace RegexParser
 
             if (node->descendants.size() == 2)
 			{
-                inherited->descendants.push_back(node->extract_child_leaf(0));
+                inherited->descendants.emplace_back(std::make_unique<astn>(node->extract_child_leaf(0)));
                 return converter(node->extract_child_node(1), std::move(inherited));
 			}
 
@@ -335,7 +335,7 @@ namespace RegexParser
             child_root->descendants.push_back(std::move(inherited->descendants.back()));
             inherited->descendants.pop_back();
 			
-            child_root->descendants.push_back(node->extract_child_leaf(1));
+            child_root->descendants.emplace_back(std::make_unique<astn>(node->extract_child_leaf(1)));
 			inherited->descendants.push_back(std::move(child_root));
 			return converter(node->extract_child_node(2), std::move(inherited));
         }
@@ -351,7 +351,7 @@ namespace RegexParser
             if (node->descendants.size() == 0)
 				return std::move(inherited);
 
-            inherited->descendants.push_back(node->extract_child_leaf(0));
+            inherited->descendants.emplace_back(std::make_unique<astn>(node->extract_child_leaf(0)));
             return converter(node->extract_child_node(1), std::move(inherited));
         }
     };

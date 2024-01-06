@@ -5,7 +5,7 @@ import <source_location>;
 import <type_traits>;
 import <variant>;
 
-template <typename T>
+export template <typename T>
 concept CEnum = requires(T t)
 {
     requires std::is_enum_v<T>;

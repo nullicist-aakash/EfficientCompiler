@@ -25,5 +25,6 @@ int main()
 	{
 		cout << *result.root << endl;
 		auto ast = RegexParser::get_ast(std::move(result.root));
+		cout << *ast << endl;
 	}
 }

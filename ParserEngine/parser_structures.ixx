@@ -1,5 +1,6 @@
 export module compiler.parser:structures;
 
+import helpers;
 import compiler.lexer;
 import <algorithm>;
 import <array>;
@@ -46,21 +47,6 @@ struct ParseTreeNode
 
     std::vector<std::variant<LeafType, InternalNodeType>> descendants{};
 
-    template<typename ostream>
-    constexpr void print(ostream& os, int depth = 0) const
-    {
-        for (int i = 0; i < depth; ++i) os << "\t";
-		os << node_type << '\n';
-		for (const auto& descendant : descendants)
-            if (std::holds_alternative<LeafType>(descendant))
-            {
-                for (int i = 0; i <= depth; ++i) os << "\t";
-                os << *std::get<LeafType>(descendant) << '\n';
-            }
-            else
-				std::get<InternalNodeType>(descendant)->print(os, depth + 1);
-    }
-
     constexpr inline auto extract_child_leaf(int index)
     {
         return std::move(std::get<LeafType>(descendants[index]));
@@ -70,6 +56,30 @@ struct ParseTreeNode
     {
         return std::move(std::get<InternalNodeType>(descendants[index]));
     }
+
+    template<typename ostream>
+    constexpr friend ostream& operator<<(ostream& os, const ParseTreeNode& node)
+    {
+        node.print(os, 0);
+        return os;
+    }
+
+private:
+
+    template<typename ostream>
+    constexpr void print(ostream& os, int depth = 0) const
+    {
+        for (int i = 0; i < depth; ++i) os << "\t";
+        os << node_type << '\n';
+        for (const auto& descendant : descendants)
+            if (std::holds_alternative<LeafType>(descendant))
+            {
+                for (int i = 0; i <= depth; ++i) os << "\t";
+                os << *std::get<LeafType>(descendant) << '\n';
+            }
+            else
+                std::get<InternalNodeType>(descendant)->print(os, depth + 1);
+    }
 };
 
 export template <typename T>
@@ -78,13 +88,6 @@ concept IsParseTreeNode = requires(T t)
     [] <CLexerTypes LexerTypes, CENonTerminal ENonTerminal>
         (ParseTreeNode<LexerTypes, ENonTerminal>&) {}(t);
 };
-
-export template<typename ostream>
-constexpr ostream& operator<<(ostream& os, const IsParseTreeNode auto& node)
-{
-    node.print(os, 0);
-    return os;
-}
 
 export template <CLexerTypes _LexerTypes, CENonTerminal _ENonTerminal, int max_prod_len = 30>
 struct ProductionInfo

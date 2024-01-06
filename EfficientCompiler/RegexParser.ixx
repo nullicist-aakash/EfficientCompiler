@@ -380,4 +380,25 @@ namespace RegexParser
             P{ NonTerminal::class_end, class_end_parser{} }
         ).visit<ParseNodeType, ASTNodeType>(std::move(parse_tree));
     }
+
+    export constexpr auto get_ast(std::string_view sv)
+	{
+        struct output
+        {
+            std::string errors;
+            std::string logs;
+            std::unique_ptr<ASTNode<LexerTypes<LexerToken>, NonTerminal>> root;
+        };
+
+        auto parser = RegexParser::get_parser();
+        auto result = parser(sv);
+        output out;
+        out.errors = std::move(result.errors);
+        out.logs = std::move(result.logs);
+		
+        if (out.errors == "")
+			out.root = RegexParser::get_ast(std::move(result.root));
+        
+        return out;
+	}
 }

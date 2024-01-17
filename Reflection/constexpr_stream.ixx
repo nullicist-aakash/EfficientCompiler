@@ -128,6 +128,12 @@ public:
 		return *this << t.get();
 	}
 
+	template <typename T>
+	constexpr constexpr_ostream& operator<<(const std::shared_ptr<T>& t)
+	{
+		return *this << t.get();
+	}
+
 	constexpr auto str() const -> const std::string&
 	{
 		return output;

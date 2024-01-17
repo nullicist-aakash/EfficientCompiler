@@ -2,15 +2,14 @@ import RegexParser;
 import compiler;
 import helpers;
 
-#include <fstream>
-#include <sstream>
-#include <iostream>
-#include <vector>
-#include <memory>
-#include <limits>
-#include <string>
-#include <map>
-#include <variant>
+import <iostream>;
+import <vector>;
+import <memory>;
+import <limits>;
+import <string>;
+import <map>;
+import <variant>;
+import <array>;
 
 using namespace std;
 
@@ -22,7 +21,12 @@ private:
 public:
 	std::vector<std::shared_ptr<Node>> empty_transitions{};
 	std::vector<std::pair<std::string, std::shared_ptr<Node>>> tran_nodes{};
-	bool is_final_state{ false };
+};
+
+struct NFA
+{
+	std::shared_ptr<Node> start_node{};
+	std::shared_ptr<Node> final_node{};
 };
 
 class NodeManager
@@ -43,7 +47,7 @@ public:
 		return instance;
 	}
 
-	auto create_node()
+	auto create_node() -> std::shared_ptr<Node>
 	{
 		all_nodes.emplace_back(std::make_shared<Node>());
 		all_nodes.back()->unique_index = all_nodes.size() - 1;
@@ -83,137 +87,190 @@ public:
 
 class RegexVisitor
 {
-	class OR_Visitor
+	struct NeutralVisitor
 	{
+		const RegexVisitor* parent{ nullptr };
+
 		template <IsASTNode astn, class out_stream>
-		constexpr bool verify_ast(const astn* node, out_stream& err_stream)
+		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 		{
-			return true;
+			std::terminate();
 		}
 	};
 
-	class ConcatVisitor
+	struct OR_Visitor
 	{
+		const RegexVisitor* parent{ nullptr };
+
 		template <IsASTNode astn, class out_stream>
-		constexpr bool verify_ast(const astn* node, out_stream& err_stream)
+		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 		{
-			return true;
+			for (auto& x : node->descendants)
+				parent->get_nfa(x.get(), err_stream);
+			return nullptr;
 		}
 	};
 
-	class LeafParser
+	struct ConcatVisitor
 	{
+		const RegexVisitor* parent{ nullptr };
+
 		template <IsASTNode astn, class out_stream>
-		constexpr bool verify_ast(const astn* node, out_stream& err_stream)
+		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 		{
-			return true;
+			for (auto& x : node->descendants)
+				parent->get_nfa(x.get(), err_stream);
+			return nullptr;
 		}
 	};
 
-	class KleeneStarParser
+	struct LeafVisitor
 	{
+		const RegexVisitor* parent{ nullptr };
+
 		template <IsASTNode astn, class out_stream>
-		constexpr bool verify_ast(const astn* node, out_stream& err_stream)
+		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 		{
-			return true;
+			for (auto& x : node->descendants)
+				parent->get_nfa(x.get(), err_stream);
+			return nullptr;
 		}
 	};
 
-	class PlusParser
+	struct KleeneStarVisitor
 	{
+		const RegexVisitor* parent{ nullptr };
+
 		template <IsASTNode astn, class out_stream>
-		constexpr bool verify_ast(const astn* node, out_stream& err_stream)
+		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 		{
-			return true;
+			for (auto& x : node->descendants)
+				parent->get_nfa(x.get(), err_stream);
+			return nullptr;
 		}
 	};
 
-	class QuestionParser
+	struct PlusVisitor
 	{
+		const RegexVisitor* parent{ nullptr };
+
 		template <IsASTNode astn, class out_stream>
-		constexpr bool verify_ast(const astn* node, out_stream& err_stream)
+		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 		{
-			return true;
+			for (auto& x : node->descendants)
+				parent->get_nfa(x.get(), err_stream);
+			return nullptr;
 		}
 	};
 
-	class ClassParser
+	struct QuestionVisitor
 	{
+		const RegexVisitor* parent{ nullptr };
+
 		template <IsASTNode astn, class out_stream>
-		constexpr bool verify_ast(const astn* node, out_stream& err_stream)
+		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 		{
-			return true;
+			for (auto& x : node->descendants)
+				parent->get_nfa(x.get(), err_stream);
+			return nullptr;
 		}
 	};
 
-	class RangeMinusParser
+	struct ClassVisitor
 	{
-		template <IsASTNode astn, class out_stream>
-		constexpr bool verify_ast(const astn* node, out_stream& err_stream)
-		{
+		const RegexVisitor* parent{ nullptr };
 
+		template <IsASTNode astn, class out_stream>
+		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
+		{
+			for (auto& x : node->descendants)
+				parent->get_nfa(x.get(), err_stream);
+			return nullptr;
+		}
+	};
+
+	struct RangeMinusVisitor
+	{
+		const RegexVisitor* parent{ nullptr };
+
+		template <IsASTNode astn, class out_stream>
+		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
+		{
+			const char left = node->descendants[0]->lexer_token->lexeme[0];
+			const char right = node->descendants[1]->lexer_token->lexeme[0];
+
+			if (left > right)
+				err_stream << "Invalid range: " << left << "-" << right << '\n';
+
+			return nullptr;
 		}
 	};
 
 	using ETerminal = RegexParser::Terminal;
 	using ENonTerminal = RegexParser::NonTerminal;
 	using EParserSymbol = std::variant<ETerminal, ENonTerminal>;
-
-	using visitors_type = std::variant<
+	using terminal_visitors_type = std::variant<
+		NeutralVisitor,
 		OR_Visitor,
 		ConcatVisitor,
-		LeafParser,
-		KleeneStarParser,
-		PlusParser,
-		QuestionParser,
-		ClassParser,
-		RangeMinusParser>;
+		LeafVisitor,
+		KleeneStarVisitor,
+		PlusVisitor,
+		QuestionVisitor,
+		RangeMinusVisitor>;
 
-	// std::map<EParserSymbol, visitors_type> visitors;
+	template <IsASTNode astn, class out_stream>
+	constexpr auto get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
+	{
+		return std::visit([&](auto&& visitor)
+			{
+				if constexpr (std::is_same_v<std::decay_t<decltype(visitor)>, ETerminal>)
+					return std::visit([&](auto&& visitor) { return visitor.get_nfa(node, err_stream); }, terminal_visitors[(int)visitor]);
+				else
+					return ClassVisitor{this}.get_nfa(node, err_stream);
+			}, node->node_symbol_type);
+	}
 
+	std::array<terminal_visitors_type, get_enum_count<ETerminal>()> terminal_visitors;
 public:
 	constexpr RegexVisitor()
 	{
-/*		visitors[ETerminal::OR] = OR_Visitor{};
-		visitors[ETerminal::CONCAT] = ConcatVisitor{};
-		visitors[ETerminal::CHAR] = LeafParser{};
-		visitors[ETerminal::DOT] = LeafParser{};
-		visitors[ETerminal::EMPTY] = LeafParser{};
-		visitors[ETerminal::STAR] = KleeneStarParser{};
-		visitors[ETerminal::PLUS] = PlusParser{};
-		visitors[ETerminal::QUESTION_MARK] = QuestionParser{};
-		visitors[ETerminal::MINUS] = RangeMinusParser{};
-		visitors[ENonTerminal::_class] = ClassParser{};*/
+		terminal_visitors[(int)ETerminal::OR] = OR_Visitor{this};
+		terminal_visitors[(int)ETerminal::CONCAT] = ConcatVisitor{ this };
+		terminal_visitors[(int)ETerminal::CHAR] = LeafVisitor{ this };
+		terminal_visitors[(int)ETerminal::DOT] = LeafVisitor{ this };
+		terminal_visitors[(int)ETerminal::EMPTY] = LeafVisitor{ this };
+		terminal_visitors[(int)ETerminal::STAR] = KleeneStarVisitor{ this };
+		terminal_visitors[(int)ETerminal::PLUS] = PlusVisitor{ this };
+		terminal_visitors[(int)ETerminal::QUESTION_MARK] = QuestionVisitor{ this };
+		terminal_visitors[(int)ETerminal::MINUS] = RangeMinusVisitor{ this };
 	}
 
 	template <IsASTNode astn>
-	constexpr bool verify_regex_ast(const astn* node)
+	constexpr auto get_nfa(const astn* node) const -> std::variant<std::string, std::shared_ptr<NFA>>
 	{
 		constexpr_ostream errors;
 
 		if (!node)
-			return false;
+			return "Empty node passed!";
 
-		return true;
+		auto res = get_nfa(node, errors);
+
+		if (errors.str().empty())
+			return std::move(res);
+	
+		return std::move(errors.str());
 	}
 };
 
-static auto read_file(string_view filename)
-{
-	ifstream file{ filename.data() };
-	ostringstream ss;
-	ss << file.rdbuf(); // reading data
-	return ss.str();
-}
-
 int main()
 {
-	auto ast = RegexParser::get_ast(R"(abc|[def-z]*)");
+	auto ast = RegexParser::get_ast(R"(abc|[def-Z]*)");
 	cout << ast.errors << endl;
 	cout << ast.logs << endl;
 	if (ast.root)
 	{
 		cout << *ast.root << endl;
-		RegexVisitor().verify_regex_ast(std::move(ast.root));
+		cout << RegexVisitor().get_nfa(ast.root.get()) << endl;
 	}
 }

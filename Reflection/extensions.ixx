@@ -64,6 +64,13 @@ constexpr auto get_enum_string(Enum en)
     return mapping[(int)en];
 }
 
+export template <CEnum Enum>
+consteval auto get_enum_count()
+{
+    constexpr auto mapping = get_enum_array<Enum>();
+	return mapping.size();
+}
+
 export template <typename ostream, CEnum Enum>
 constexpr ostream& operator<<(ostream& out, const Enum& en)
 {

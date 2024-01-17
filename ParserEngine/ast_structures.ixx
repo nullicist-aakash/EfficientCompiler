@@ -10,6 +10,7 @@ import <vector>;
 export template <CLexerTypes LexerTypes, CENonTerminal ENonTerminal>
 struct ASTNode
 {
+    using ParserTypes = ParserTypes<LexerTypes, ENonTerminal>;
     using ETerminal = LexerTypes::ETerminal;
     using ILexerToken = LexerTypes::ILexerToken;
     using InternalNodeType = std::unique_ptr<ParseTreeNode<LexerTypes, ENonTerminal>>;

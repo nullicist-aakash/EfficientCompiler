@@ -16,7 +16,7 @@ using namespace std;
 
 namespace RegexParser
 {
-    enum class Terminal
+    export enum class Terminal
     {
         eps,
         TK_EOF,
@@ -43,7 +43,7 @@ namespace RegexParser
         ESCAPED_CHAR,
     };
 
-    enum class NonTerminal
+    export enum class NonTerminal
     {
         start,
         regex,
@@ -54,7 +54,6 @@ namespace RegexParser
         factor_core,
         factor_suffix,
         _class,
-        // These following 2 names have no meaning, the names were chosen based on dfa on paper
         class_mid,
         class_end
     };

@@ -137,6 +137,12 @@
     <ClCompile Include="JackParser.ixx" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RegexParser.ixx" />
+    <ClCompile Include="RegexParser_ast.cpp" />
+    <ClCompile Include="RegexParser_ast.ixx" />
+    <ClCompile Include="RegexParser_lexer.ixx" />
+    <ClCompile Include="RegexParser_nfa.ixx" />
+    <ClCompile Include="RegexParser_parser.ixx" />
+    <ClCompile Include="RegexParser_structures.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Update="C:\Users\Aakash\source\repos\EfficientCompiler\ParserEngine\dfa_logic.ixx">
@@ -152,6 +158,9 @@
       <FileType>Document</FileType>
     </ClCompile>
     <ClCompile Update="C:\Users\Aakash\source\repos\EfficientCompiler\Reflection\checks.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Update="C:\Users\Aakash\source\repos\EfficientCompiler\Reflection\enum_extensions.ixx">
       <FileType>Document</FileType>
     </ClCompile>
     <ClCompile Update="C:\Users\Aakash\source\repos\EfficientCompiler\Reflection\extensions.ixx">

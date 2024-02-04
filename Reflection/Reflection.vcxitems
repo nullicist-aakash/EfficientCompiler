@@ -18,9 +18,10 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)checks.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)constexpr_stream.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)constexpr_stream.ixx" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)extensions.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)extensions.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)enum_extensions.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)enum_extensions.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)flatmap.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)helpers.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)variant_extensions.ixx" />
   </ItemGroup>
 </Project>

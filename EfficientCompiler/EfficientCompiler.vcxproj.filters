@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\RegexParser">
+      <UniqueIdentifier>{4ade1f15-0ffa-4570-90b1-3e4dd1a7a703}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -21,8 +24,26 @@
     <ClCompile Include="JackParser.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RegexParser_structures.ixx">
+      <Filter>Source Files\RegexParser</Filter>
+    </ClCompile>
     <ClCompile Include="RegexParser.ixx">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\RegexParser</Filter>
+    </ClCompile>
+    <ClCompile Include="RegexParser_lexer.ixx">
+      <Filter>Source Files\RegexParser</Filter>
+    </ClCompile>
+    <ClCompile Include="RegexParser_parser.ixx">
+      <Filter>Source Files\RegexParser</Filter>
+    </ClCompile>
+    <ClCompile Include="RegexParser_ast.ixx">
+      <Filter>Source Files\RegexParser</Filter>
+    </ClCompile>
+    <ClCompile Include="RegexParser_ast.cpp">
+      <Filter>Source Files\RegexParser</Filter>
+    </ClCompile>
+    <ClCompile Include="RegexParser_nfa.ixx">
+      <Filter>Source Files\RegexParser</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

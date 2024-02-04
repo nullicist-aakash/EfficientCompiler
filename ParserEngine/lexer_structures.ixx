@@ -1,9 +1,6 @@
 export module compiler.lexer:structures;
 
-import <concepts>;
-import <string_view>;
-import <type_traits>;
-import <variant>;
+import std;
 
 // Forward Declarations
 enum class ELexerError;

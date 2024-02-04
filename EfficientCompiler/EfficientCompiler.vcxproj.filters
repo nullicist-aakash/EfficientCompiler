@@ -45,6 +45,9 @@
     <ClCompile Include="RegexParser_nfa.ixx">
       <Filter>Source Files\RegexParser</Filter>
     </ClCompile>
+    <ClCompile Include="RegexParser_nfa_to_dfa.ixx">
+      <Filter>Source Files\RegexParser</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="source.jack">

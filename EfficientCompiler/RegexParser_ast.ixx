@@ -1,8 +1,6 @@
 export module RegexParser:ast;
 
-import <string>;
-import <string_view>;
-import <memory>;
+import std;
 
 import :structures;
 import compiler;

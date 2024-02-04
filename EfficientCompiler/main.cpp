@@ -2,14 +2,7 @@ import RegexParser;
 import compiler;
 import helpers;
 
-import <iostream>;
-import <vector>;
-import <memory>;
-import <limits>;
-import <string>;
-import <map>;
-import <variant>;
-import <array>;
+import std;
 
 using namespace std;
 using namespace RegexParser;

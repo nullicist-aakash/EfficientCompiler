@@ -1,8 +1,6 @@
 export module helpers:checks;
 
-import <string_view>;
-import <array>;
-import <algorithm>;
+import std;
 
 static consteval auto to_oversized_array(std::string_view sv)
 {

@@ -4,9 +4,7 @@ import :structures;
 import :parser;
 import compiler;
 
-import <memory>;
-import <variant>;
-import <string_view>;
+import std;
 
 using std::unique_ptr;
 using RegexParser::ast_output;

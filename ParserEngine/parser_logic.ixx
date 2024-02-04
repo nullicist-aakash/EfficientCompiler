@@ -5,16 +5,7 @@ import :parse_table;
 import compiler.lexer;
 import helpers;
 
-import <string_view>;
-import <iostream>;
-import <expected>;
-import <format>;
-import <functional>;
-import <vector>;
-import <stack>;
-import <string>;
-import <variant>;
-import <memory>;
+import std;
 
 enum class ETokenConsumed
 {

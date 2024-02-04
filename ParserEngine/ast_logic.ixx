@@ -1,11 +1,6 @@
 export module compiler.ast:logic;
 
-import <variant>;
-import <array>;
-import <vector>;
-import <memory>;
-import <functional>;
-import <stdexcept>;
+import std;
 
 import :structures;
 import compiler.lexer;

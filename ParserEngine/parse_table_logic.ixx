@@ -4,19 +4,7 @@ import :structures;
 import compiler.lexer;
 import helpers;
 
-import <array>;
-import <algorithm>;
-import <bitset>;
-import <exception>;
-import <format>;
-import <functional>;
-import <iterator>;
-import <map>;
-import <ranges>;
-import <string_view>;
-import <type_traits>;
-import <utility>;
-import <variant>;
+import std;
 
 export template <CParserTypes ParserTypes, int max_prod_len, int num_productions>
 struct ParseTable

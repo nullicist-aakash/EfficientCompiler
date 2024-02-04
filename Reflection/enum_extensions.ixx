@@ -1,9 +1,6 @@
 export module helpers:enum_extensions;
 
-import <string_view>;
-import <array>;
-import <source_location>;
-import <type_traits>;
+import std;
 
 export template <typename T>
 concept CEnum = requires(T t)

@@ -1,13 +1,5 @@
 export module helpers:constexpr_stream;
-import <string_view>;
-import <concepts>;
-import <numeric>;
-import <cstdint>;
-import <algorithm>;
-import <format>;
-import <memory>;
-import <bit>;
-import <vector>;
+import std;
 
 export class constexpr_ostream
 {

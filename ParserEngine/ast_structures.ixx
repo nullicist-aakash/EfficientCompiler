@@ -3,9 +3,7 @@ export module compiler.ast:structures;
 import helpers;
 import compiler.lexer;
 import compiler.parser;
-import <memory>;
-import <variant>;
-import <vector>;
+import std;
 
 export template <CLexerTypes LexerTypes, CENonTerminal ENonTerminal>
 struct ASTNode

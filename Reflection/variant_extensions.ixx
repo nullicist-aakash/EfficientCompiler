@@ -1,6 +1,6 @@
 export module helpers:variant_extensions;
 
-import <variant>;
+import std;
 
 template <typename T, typename... Ts>
 struct unique { using type = T; };

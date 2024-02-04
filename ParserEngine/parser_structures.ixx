@@ -2,16 +2,7 @@ export module compiler.parser:structures;
 
 import helpers;
 import compiler.lexer;
-import <algorithm>;
-import <array>;
-import <concepts>;
-import <functional>;
-import <iterator>;
-import <memory>;
-import <string_view>;
-import <type_traits>;
-import <variant>;
-import <vector>;
+import std;
 
 // Concepts
 export template<typename T>

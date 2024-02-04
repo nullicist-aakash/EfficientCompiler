@@ -2,15 +2,7 @@ export module compiler.lexer:dfa;
 
 import :structures;
 import helpers;
-import <algorithm>;
-import <array>;
-import <limits>;
-import <numeric>;
-import <ranges>;
-import <string_view>;
-import <type_traits>;
-import <variant>;
-import <vector>;
+import std;
 
 export template <CELexerSymbol ELexerSymbol, int num_states>
 struct DFA

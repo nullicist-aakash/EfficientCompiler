@@ -1,10 +1,5 @@
 export module helpers:flatmap;
-import <cstdio>;
-import <array>;
-import <optional>;
-import <algorithm>;
-import <stdexcept>;
-import <format>;
+import std;
 
 export template <typename Key, typename Value, std::size_t Size>
 class flatmap

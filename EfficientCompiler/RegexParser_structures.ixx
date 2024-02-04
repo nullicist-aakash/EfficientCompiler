@@ -1,10 +1,6 @@
 export module RegexParser:structures;
 
-import <string_view>;
-import <variant>;
-import <memory>;
-import <vector>;
-import <limits>;
+import std;
 
 import compiler;
 import helpers;

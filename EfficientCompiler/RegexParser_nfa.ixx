@@ -1,10 +1,7 @@
 export module RegexParser:nfa;
 import :structures;
 
-import <vector>;
-import <memory>;
-import <string>;
-import <variant>;
+import std;
 import compiler;
 import helpers;
 

@@ -1,7 +1,7 @@
 export module RegexParser:lexer;
 import :structures;
 
-import <array>;
+import std;
 
 import compiler;
 

@@ -4,9 +4,7 @@ import :dfa;
 import :structures;
 import helpers;
 
-import <algorithm>;
-import <string_view>;
-import <variant>;
+import std;
 
 template <CLexerTypes LexerTypes, int num_states>
 struct Lexer;

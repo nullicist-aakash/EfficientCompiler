@@ -110,6 +110,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>false</TreatWarningAsError>
       <TranslateIncludes>false</TranslateIncludes>
+      <BuildStlModules>true</BuildStlModules>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -141,6 +142,7 @@
     <ClCompile Include="RegexParser_ast.ixx" />
     <ClCompile Include="RegexParser_lexer.ixx" />
     <ClCompile Include="RegexParser_nfa.ixx" />
+    <ClCompile Include="RegexParser_nfa_to_dfa.ixx" />
     <ClCompile Include="RegexParser_parser.ixx" />
     <ClCompile Include="RegexParser_structures.ixx" />
   </ItemGroup>

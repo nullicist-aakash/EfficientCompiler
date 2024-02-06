@@ -100,41 +100,44 @@ namespace RegexParser
         friend class NodeManager;
         std::size_t unique_index{ std::numeric_limits<std::size_t>::max() };
     public:
-        std::vector<std::shared_ptr<Node>> empty_transitions{};
-        std::vector<std::pair<std::string, std::shared_ptr<Node>>> tran_nodes{};
+        std::vector<helpers::shared_ptr<Node>> empty_transitions{};
+        std::vector<std::pair<std::string, helpers::shared_ptr<Node>>> tran_nodes{};
+
+        constexpr Node() = default;
+        constexpr ~Node() = default;
     };
 
     export struct NFA
     {
-        std::shared_ptr<Node> start_node{};
-        std::shared_ptr<Node> final_node{};
+        helpers::shared_ptr<Node> start_node{};
+        helpers::shared_ptr<Node> final_node{};
     };
 
     export class NodeManager
     {
     private:
-        NodeManager() = default;
-        NodeManager(const NodeManager&) = delete;
-        NodeManager(NodeManager&&) = delete;
-        NodeManager& operator=(const NodeManager&) = delete;
-        NodeManager& operator=(NodeManager&&) = delete;
+        constexpr NodeManager(const NodeManager&) = delete;
+        constexpr NodeManager(NodeManager&&) = delete;
+        constexpr NodeManager& operator=(const NodeManager&) = delete;
+        constexpr NodeManager& operator=(NodeManager&&) = delete;
 
     public:
-        std::vector<std::shared_ptr<Node>> all_nodes;
-        static auto get_instance() -> NodeManager&
-        {
-            static NodeManager instance;
-            return instance;
-        }
+        constexpr NodeManager() = default;
+        std::vector<helpers::shared_ptr<Node>> all_nodes;
 
-        auto create_node() -> std::shared_ptr<Node>
+        constexpr auto create_node() -> helpers::shared_ptr<Node>
         {
-            all_nodes.emplace_back(std::make_shared<Node>());
+            all_nodes.emplace_back(helpers::make_shared<Node>());
             all_nodes.back()->unique_index = all_nodes.size() - 1;
             return all_nodes.back();
         }
 
-        void del_node(std::shared_ptr<Node> node)
+        constexpr auto get_node_count() const
+        {
+            return all_nodes.size();
+        }
+
+        constexpr void delete_node(helpers::shared_ptr<Node> node)
         {
             auto index = std::exchange(node->unique_index, std::numeric_limits<std::size_t>::max());
             all_nodes[index] = nullptr;
@@ -148,18 +151,18 @@ namespace RegexParser
             all_nodes.pop_back();
         }
 
-        void garbage_collect()
+        constexpr void garbage_collect()
         {
             for (int i = 0; i < all_nodes.size(); ++i)
             {
                 if (all_nodes[i].use_count() > 1)
                     continue;
 
-                del_node(all_nodes[i]);
+                delete_node(all_nodes[i]);
             }
         }
 
-        void delete_all_nodes()
+        constexpr void delete_all_nodes()
         {
             all_nodes.clear();
         }

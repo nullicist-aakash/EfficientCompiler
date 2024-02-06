@@ -199,7 +199,7 @@ constexpr auto RegexParser::get_ast(std::unique_ptr<ParseNodeType> parse_tree) -
 
 constexpr auto RegexParser::get_ast(std::string_view sv) -> ast_output
 {
-    auto parser = RegexParser::get_parser();
+    constexpr auto parser = RegexParser::get_parser();
     auto result = parser(sv);
     ast_output out;
     out.errors = std::move(result.errors);

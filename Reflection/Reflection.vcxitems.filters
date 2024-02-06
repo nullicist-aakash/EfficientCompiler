@@ -15,6 +15,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)variant_extensions.ixx">
       <Filter>Extensions</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)shared_ptr.ixx" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Extensions">

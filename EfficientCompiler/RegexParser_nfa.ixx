@@ -19,7 +19,7 @@ namespace
 		const RegexVisitor* parent{ nullptr };
 
 		template <IsASTNode astn, class out_stream>
-		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
+		constexpr auto get_nfa(auto& nm, const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
 	};
 
 	struct ConcatVisitor
@@ -27,7 +27,7 @@ namespace
 		const RegexVisitor* parent{ nullptr };
 
 		template <IsASTNode astn, class out_stream>
-		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
+		constexpr auto get_nfa(auto& nm, const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
 	};
 
 	struct LeafVisitor
@@ -35,7 +35,7 @@ namespace
 		const RegexVisitor* parent{ nullptr };
 
 		template <IsASTNode astn, class out_stream>
-		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
+		constexpr auto get_nfa(auto& nm, const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
 	};
 
 	struct KleeneStarVisitor
@@ -43,7 +43,7 @@ namespace
 		const RegexVisitor* parent{ nullptr };
 
 		template <IsASTNode astn, class out_stream>
-		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
+		constexpr auto get_nfa(auto& nm, const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
 	};
 
 	struct PlusVisitor
@@ -51,7 +51,7 @@ namespace
 		const RegexVisitor* parent{ nullptr };
 
 		template <IsASTNode astn, class out_stream>
-		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
+		constexpr auto get_nfa(auto& nm, const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
 	};
 
 	struct QuestionVisitor
@@ -59,7 +59,7 @@ namespace
 		const RegexVisitor* parent{ nullptr };
 
 		template <IsASTNode astn, class out_stream>
-		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
+		constexpr auto get_nfa(auto& nm, const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
 	};
 
 	struct RangeMinusVisitor
@@ -67,7 +67,7 @@ namespace
 		const RegexVisitor* parent{ nullptr };
 
 		template <IsASTNode astn, class out_stream>
-		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
+		constexpr auto get_nfa(auto& nm, const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
 	};
 
 	struct ClassVisitor
@@ -75,7 +75,7 @@ namespace
 		const RegexVisitor* parent{ nullptr };
 
 		template <IsASTNode astn, class out_stream>
-		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
+		constexpr auto get_nfa(auto& nm, const astn* node, out_stream& err_stream) const->std::shared_ptr<NFA>;
 	};
 
 	struct RegexVisitor
@@ -85,7 +85,7 @@ namespace
 			const RegexVisitor* parent{ nullptr };
 
 			template <IsASTNode astn, class out_stream>
-			constexpr auto get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
+			constexpr auto get_nfa(auto& nm, const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 			{
 				std::terminate();
 			}
@@ -103,6 +103,7 @@ namespace
 
 		std::array<terminal_visitors_type, get_enum_count<Terminal>()> terminal_visitors;
 
+	public:
 		constexpr RegexVisitor()
 		{
 			terminal_visitors[(int)Terminal::OR] = OR_Visitor{ this };
@@ -116,31 +117,22 @@ namespace
 			terminal_visitors[(int)Terminal::MINUS] = RangeMinusVisitor{ this };
 		}
 
-	public:
-		static auto get_instance() -> RegexVisitor&
-		{
-			static RegexVisitor instance;
-			return instance;
-		}
-
 		template <IsASTNode astn, class out_stream>
-		constexpr auto get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
+		constexpr auto get_nfa(auto& nm, const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 		{
 			return std::visit([&](auto&& visitor)
 				{
 					if constexpr (std::is_same_v<std::decay_t<decltype(visitor)>, Terminal>)
-						return std::visit([&](auto&& visitor) { return visitor.get_nfa(node, err_stream); }, terminal_visitors[(int)visitor]);
+						return std::visit([&](auto&& visitor) { return visitor.get_nfa(nm, node, err_stream); }, terminal_visitors[(int)visitor]);
 					else
-						return ClassVisitor{ this }.get_nfa(node, err_stream);
+						return ClassVisitor{ this }.get_nfa(nm, node, err_stream);
 				}, node->node_symbol_type);
 		}
 	};
 
 	template <IsASTNode astn, class out_stream>
-	constexpr auto OR_Visitor::get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
+	constexpr auto OR_Visitor::get_nfa(auto& nm, const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 	{
-		auto& nm = NodeManager::get_instance();
-
 		if (node->descendants.size() < 2)
 			err_stream << "Bug: OR node must have at least 2 children!\n";
 
@@ -148,7 +140,7 @@ namespace
 
 		for (auto& x : node->descendants)
 		{
-			auto child_nfa = this->parent->get_nfa(x.get(), err_stream);
+			auto child_nfa = this->parent->get_nfa(nm, x.get(), err_stream);
 
 			if (!child_nfa)
 			{
@@ -164,10 +156,8 @@ namespace
 	}
 
 	template <IsASTNode astn, class out_stream>
-	constexpr auto ConcatVisitor::get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
+	constexpr auto ConcatVisitor::get_nfa(auto& nm, const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 	{
-		auto& nm = NodeManager::get_instance();
-
 		if (node->descendants.size() < 2)
 			err_stream << "Bug: Concat node must have at least 2 children!\n";
 
@@ -175,7 +165,7 @@ namespace
 
 		for (auto& x : node->descendants)
 		{
-			auto child_nfa = this->parent->get_nfa(x.get(), err_stream);
+			auto child_nfa = this->parent->get_nfa(nm, x.get(), err_stream);
 
 			if (!child_nfa)
 			{
@@ -197,10 +187,8 @@ namespace
 	}
 
 	template <IsASTNode astn, class out_stream>
-	constexpr auto LeafVisitor::get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
+	constexpr auto LeafVisitor::get_nfa(auto& nm, const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 	{
-		auto& nm = NodeManager::get_instance();
-
 		const auto type = node->lexer_token->type;
 		const auto character = node->lexer_token->lexeme[0];
 
@@ -227,14 +215,12 @@ namespace
 	}
 
 	template <IsASTNode astn, class out_stream>
-	constexpr auto KleeneStarVisitor::get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
+	constexpr auto KleeneStarVisitor::get_nfa(auto& nm, const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 	{
-		auto& nm = NodeManager::get_instance();
-
 		if (node->descendants.size() != 1)
 			err_stream << "Bug: Kleene Star node must have exactly one child!\n";
 
-		auto child_nfa = this->parent->get_nfa(node->descendants[0].get(), err_stream);
+		auto child_nfa = this->parent->get_nfa(nm, node->descendants[0].get(), err_stream);
 
 		if (!child_nfa)
 		{
@@ -249,14 +235,12 @@ namespace
 	}
 
 	template <IsASTNode astn, class out_stream>
-	constexpr auto PlusVisitor::get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
+	constexpr auto PlusVisitor::get_nfa(auto& nm, const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 	{
-		auto& nm = NodeManager::get_instance();
-
 		if (node->descendants.size() != 1)
 			err_stream << "Bug: Plus node must have exactly one child!\n";
 
-		auto child_nfa = this->parent->get_nfa(node->descendants[0].get(), err_stream);
+		auto child_nfa = this->parent->get_nfa(nm, node->descendants[0].get(), err_stream);
 
 		if (!child_nfa)
 		{
@@ -270,14 +254,12 @@ namespace
 	}
 
 	template <IsASTNode astn, class out_stream>
-	constexpr auto QuestionVisitor::get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
+	constexpr auto QuestionVisitor::get_nfa(auto& nm, const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 	{
-		auto& nm = NodeManager::get_instance();
-
 		if (node->descendants.size() != 1)
 			err_stream << "Bug: Question node must have exactly one child!\n";
 
-		auto child_nfa = this->parent->get_nfa(node->descendants[0].get(), err_stream);
+		auto child_nfa = this->parent->get_nfa(nm, node->descendants[0].get(), err_stream);
 
 		if (!child_nfa)
 		{
@@ -291,10 +273,8 @@ namespace
 	}
 
 	template <IsASTNode astn, class out_stream>
-	constexpr auto ClassVisitor::get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
+	constexpr auto ClassVisitor::get_nfa(auto& nm, const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 	{
-		auto& nm = NodeManager::get_instance();
-
 		auto nfa = std::make_shared<NFA>(nm.create_node(), nm.create_node());
 
 		bool is_negated = false;
@@ -307,7 +287,7 @@ namespace
 				is_negated = true;
 				continue;
 			}
-			auto child_nfa = this->parent->get_nfa(x.get(), err_stream);
+			auto child_nfa = this->parent->get_nfa(nm, x.get(), err_stream);
 
 			if (!child_nfa)
 			{
@@ -340,7 +320,7 @@ namespace
 	}
 
 	template <IsASTNode astn, class out_stream>
-	constexpr auto RangeMinusVisitor::get_nfa(const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
+	constexpr auto RangeMinusVisitor::get_nfa(auto &nm, const astn* node, out_stream& err_stream) const -> std::shared_ptr<NFA>
 	{
 		const char left = node->descendants[0]->lexer_token->lexeme[0];
 		const char right = node->descendants[1]->lexer_token->lexeme[0];
@@ -350,8 +330,6 @@ namespace
 			err_stream << "Invalid range: " << left << "-" << right << '\n';
 			return nullptr;
 		}
-
-		auto& nm = NodeManager::get_instance();
 
 		std::string chars = "";
 		for (int i = left; i <= right; ++i)
@@ -366,15 +344,17 @@ namespace
 namespace RegexParser
 {
 	export template <IsASTNode astn>
-		constexpr auto get_nfa(const astn* node) -> std::variant<std::string, std::shared_ptr<NFA>>
+		constexpr auto get_nfa(const astn* node) -> std::variant<std::string, std::shared_ptr<NFA>, int>
 	{
 		constexpr_ostream errors;
-
+		
 		if (!node)
-			return "Empty node passed!";
+			return 5;
+		
+		NodeManager nm;
+		auto res = RegexVisitor().get_nfa(nm, node, errors);
 
-		auto res = RegexVisitor::get_instance().get_nfa(node, errors);
-
+		return 6;
 		if (errors.str().empty())
 			return std::move(res);
 

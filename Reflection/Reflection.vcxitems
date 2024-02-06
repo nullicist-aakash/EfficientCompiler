@@ -22,6 +22,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)enum_extensions.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)flatmap.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)helpers.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)shared_ptr.ixx" />
     <ClCompile Include="$(MSBuildThisFileDirectory)variant_extensions.ixx" />
   </ItemGroup>
 </Project>

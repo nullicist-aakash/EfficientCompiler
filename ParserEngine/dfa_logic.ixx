@@ -158,8 +158,6 @@ constexpr auto validate_transitions(const auto& transitions)
 
     if (count_visited != num_states)
         throw "Not all states are reachable";
-
-    return "";
 }
 
 template <int num_states>
@@ -167,18 +165,16 @@ constexpr auto validate_final_states(const auto& final_states)
 {
     for (auto& f : final_states)
         if (f.state_no < 0 || f.state_no > num_states)
-            return "An entry for state number in final states is out of range.";
+            throw "An entry for state number in final states is out of range.";
 
     std::vector<bool> visited(num_states, false);
     for (auto& f : final_states)
     {
         if (visited[f.state_no])
-            return "Multiple entries for same state in final states.";
+            throw "Multiple entries for same state in final states.";
 
         visited[f.state_no] = true;
     }
-
-    return "";
 }
 
 export template <

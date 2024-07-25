@@ -5,22 +5,28 @@ VisualStudioVersion = 17.7.34221.43
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EfficientCompiler", "EfficientCompiler\EfficientCompiler.vcxproj", "{CBA65D2C-2C30-4992-81BD-71BEFF7A931E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "helpers", "Reflection\Reflection.vcxitems", "{EEC30B62-E870-4BC1-AB55-E028F7F60863}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Helpers", "Reflection\Reflection.vcxitems", "{EEC30B62-E870-4BC1-AB55-E028F7F60863}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "parser", "ParserEngine\ParserEngine.vcxitems", "{22A4C2AE-E022-46FD-AE12-D388F61640C3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Compiler Engine", "ParserEngine\ParserEngine.vcxitems", "{22A4C2AE-E022-46FD-AE12-D388F61640C3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM64 = Debug|ARM64
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		Release|ARM64 = Release|ARM64
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CBA65D2C-2C30-4992-81BD-71BEFF7A931E}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{CBA65D2C-2C30-4992-81BD-71BEFF7A931E}.Debug|ARM64.Build.0 = Debug|ARM64
 		{CBA65D2C-2C30-4992-81BD-71BEFF7A931E}.Debug|x64.ActiveCfg = Debug|x64
 		{CBA65D2C-2C30-4992-81BD-71BEFF7A931E}.Debug|x64.Build.0 = Debug|x64
 		{CBA65D2C-2C30-4992-81BD-71BEFF7A931E}.Debug|x86.ActiveCfg = Debug|Win32
 		{CBA65D2C-2C30-4992-81BD-71BEFF7A931E}.Debug|x86.Build.0 = Debug|Win32
+		{CBA65D2C-2C30-4992-81BD-71BEFF7A931E}.Release|ARM64.ActiveCfg = Release|ARM64
+		{CBA65D2C-2C30-4992-81BD-71BEFF7A931E}.Release|ARM64.Build.0 = Release|ARM64
 		{CBA65D2C-2C30-4992-81BD-71BEFF7A931E}.Release|x64.ActiveCfg = Release|x64
 		{CBA65D2C-2C30-4992-81BD-71BEFF7A931E}.Release|x64.Build.0 = Release|x64
 		{CBA65D2C-2C30-4992-81BD-71BEFF7A931E}.Release|x86.ActiveCfg = Release|Win32

@@ -1,12 +1,13 @@
 import compiler;
 import helpers;
-import JackParser;
+import JSONParser;
 import std;
 
 using namespace std;
 
 int main()
 {
-	constexpr auto parser = JackParser::get_parser();
+	constexpr auto parser = JSONParser::get_parser();
+	cout << parser << endl;
 	return 0;
 }

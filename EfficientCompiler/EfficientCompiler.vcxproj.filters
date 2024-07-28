@@ -26,5 +26,6 @@
     <None Include="source.jack">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="file.json" />
   </ItemGroup>
 </Project>
